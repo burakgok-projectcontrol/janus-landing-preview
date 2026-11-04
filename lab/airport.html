@@ -574,6 +574,8 @@ function syncSize() {
   labelRenderer.setSize(innerWidth, innerHeight);
   backdrop.resize(camera.aspect);
 }
+// Reduced motion: machines and idle loops stand still; the page jumps between steps.
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clock = new THREE.Clock();
 let simT = 0;
 // Compile every material once up front (also the ones that are still hidden, e.g. the chart), so nothing compiles mid-animation.
@@ -592,7 +594,7 @@ renderer.setAnimationLoop(() => {
     range.value = Math.round(progress * 1000);
   }
   const st = stage(progress);
-  const sdt = st.evm ? 0 : dt;
+  const sdt = st.evm || REDUCED ? 0 : dt;
   simT += sdt;
   update(st.c, simT);
   fadeSite(1 - 0.92 * st.fade);

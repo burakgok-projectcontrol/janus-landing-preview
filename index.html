@@ -160,8 +160,8 @@
   .after::before { content: ""; position: absolute; inset: -160px 0 0; pointer-events: none; opacity: .55;
     background-image: linear-gradient(rgba(120, 180, 255, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .07) 1px, transparent 1px),
       linear-gradient(rgba(120, 180, 255, .14) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .14) 1px, transparent 1px);
-    background-size: 32px 32px, 32px 32px, 160px 160px, 160px 160px; animation: drift 30s linear infinite; }
-  @keyframes drift { to { transform: translateY(160px); } }
+    background-size: 32px 32px, 32px 32px, 160px 160px, 160px 160px; transform: translate3d(0, var(--par, 0px), 0); will-change: transform; }
+  /* The grid moves with the scroll at a slower rate (set by script on wide screens; none with reduced motion). */
   .after > * { position: relative; }
   .glow { position: relative; isolation: isolate; transition: transform .35s ease, border-color .35s, box-shadow .35s, background .35s; }
   .glow::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; opacity: 0; transition: opacity .35s;
@@ -189,15 +189,34 @@
   .feat .card p { font-size: .9rem; }
   .monitor-wrap { position: sticky; top: 110px; perspective: 1400px; }
   .monitor { position: relative; border-radius: 4px; border: 1px solid rgba(53, 199, 232, .45); background: #111C2B; padding: 10px 10px 12px;
-    transform: rotateY(-14deg) rotateX(6deg); transform-style: preserve-3d; transition: transform .5s ease; box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .7), 0 0 60px -10px rgba(53, 199, 232, .35); animation: float 7s ease-in-out infinite; }
-  @keyframes float { 50% { translate: 0 -10px; } }
+    transform: rotateY(-14deg) rotateX(6deg); transform-style: preserve-3d; transition: transform .5s ease; box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .7), 0 0 60px -10px rgba(53, 199, 232, .35); }
   .monitor .dots { display: flex; gap: 6px; padding: 2px 4px 10px; }
   .monitor .dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(165, 214, 255, .35); }
   .monitor .screen { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 3px; background: #fff; }
   .monitor .screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top left; opacity: 0; transform: translateZ(0) scale(1.04); transition: opacity .55s ease, transform .9s ease; }
   .monitor .screen img.on { opacity: 1; transform: scale(1); }
-  .monitor .scan { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 0%, rgba(53, 199, 232, .18) 50%, transparent 100%); background-size: 100% 220%; animation: scan 5s linear infinite; mix-blend-mode: screen; }
-  @keyframes scan { from { background-position: 0 -120%; } to { background-position: 0 220%; } }
+  .monitor .scan { display: none; } /* decorative scan line removed */
+  /* ERP – JANUS – planning: two lines draw into JANUS when the block comes into view. */
+  .flow { display: grid; grid-template-columns: 1fr minmax(40px, 120px) 1.2fr minmax(40px, 120px) 1fr; align-items: center; margin: 0 0 48px; max-width: 980px; }
+  .flow .node { border: 1px solid var(--line); background: var(--card); border-radius: 3px; padding: 16px 18px; }
+  .flow .node b { display: block; font-size: 1.05rem; letter-spacing: .04em; margin-bottom: 4px; }
+  .flow .node span { display: block; color: var(--muted); font-size: .9rem; line-height: 1.45; }
+  .flow .core { border-color: var(--cyan); background: rgba(53, 199, 232, .08); }
+  .flow .core b { color: var(--cyan); letter-spacing: .16em; }
+  .flow .wire { position: relative; height: 2px; margin: 0 6px; background: var(--cyan); transform: scaleX(0); transform-origin: left; transition: transform .9s cubic-bezier(.5, 0, .2, 1) .35s; }
+  .flow .wire.rev { transform-origin: right; }
+  .flow .wire::after { content: ""; position: absolute; top: -5px; right: -1px; border: 6px solid transparent; border-left: 8px solid var(--cyan); border-right: 0; }
+  .flow .wire.rev::after { right: auto; left: -1px; border-left: 0; border-right: 8px solid var(--cyan); }
+  .flow.in .wire { transform: scaleX(1); }
+  @media (max-width: 860px) {
+    .flow { grid-template-columns: 1fr; justify-items: stretch; }
+    .flow .wire { width: 2px; height: 34px; margin: 6px auto; transform: scaleY(0); transform-origin: top; }
+    .flow .wire.rev { transform-origin: bottom; }
+    .flow .wire::after { top: auto; bottom: -1px; right: -5px; border: 6px solid transparent; border-top: 8px solid var(--cyan); border-bottom: 0; }
+    .flow .wire.rev::after { bottom: auto; top: -1px; left: -5px; right: auto; border-top: 0; border-bottom: 8px solid var(--cyan); }
+    .flow.in .wire { transform: scaleY(1); }
+  }
+  @media (prefers-reduced-motion: reduce) { .flow .wire { transform: none !important; transition: none; } }
   .monitor-cap { margin-top: 16px; color: var(--muted); font-size: .88rem; min-height: 2.6em; }
   .monitor-cap b { color: var(--text); }
   .monitor.tilt-flat { transform: rotateY(0) rotateX(0); }
@@ -462,6 +481,13 @@
         <p class="eyebrow reveal" data-en="One control model">Tek kontrol modeli</p>
         <h2 class="big reveal" data-en="Not instead of ERP and planning, but between them.">ERP ve planlamanın yerine değil, arasına.</h2>
         <p class="sub reveal" data-en="Janus does not replace your ERP or planning software; it links their data in one model. The BOQ is the control object for revenue and the commercial result, the activity for time and cost attribution. Point at a card to open its screen.">Janus ERP'nin veya planlama yazılımının yerine geçmez; onlardan gelen veriyi tek modelde ilişkilendirir. BOQ gelirin ve ticari sonucun, aktivite ise zaman ve maliyet atfının kontrol nesnesidir. Bir kartın üzerine gelin, ilgili ekran açılsın.</p>
+        <div class="flow reveal" role="group" aria-label="ERP ve planlama verisi JANUS'ta birleşir" data-en-aria-label="ERP and planning data meet in JANUS">
+          <div class="node"><b>ERP</b><span data-en="Actual cost">Gerçekleşen maliyet</span></div>
+          <i class="wire" aria-hidden="true"></i>
+          <div class="node core"><b>JANUS</b><span data-en="BOQ · activity · PV / EV / AC, one control model">BOQ · aktivite · PV / EV / AC, tek kontrol modeli</span></div>
+          <i class="wire rev" aria-hidden="true"></i>
+          <div class="node"><b data-en="Planning">Planlama</b><span data-en="Activities and schedule">Aktiviteler ve takvim</span></div>
+        </div>
         <div class="feat">
           <div class="grid" id="featCards">
           <article class="card glow pick reveal" tabindex="0" style="--d:0.00s" data-shot="mapping" data-alt="BOQ eşleme ekranı" data-en-data-alt="BOQ mapping screen"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h7M4 12h4M4 17h7M15 7h5M15 17h5M11 7l4 5-4 5M8 12h7" /></svg></span><h3 data-en="BOQ ↔ activity mapping">BOQ ↔ aktivite eşleme</h3><p data-en="Each BOQ item is linked to one or more activities with weights; unmapped and double-counted amounts are reported separately.">Her BOQ kalemi bir veya birkaç aktiviteye ağırlıkla bağlanır; eşlenmemiş ve çift sayılan tutarlar ayrıca raporlanır.</p></article>
@@ -705,7 +731,7 @@
     const span = Math.abs(to - g);
     const stepSpan = i <= 0 ? 0.5 : STOPS[i].g - STOPS[i - 1].g;
     from = g; target = to; stop = i; elapsed = 0; held = 0;
-    dur = reduced ? 0.4 : to > g ? Math.max(0.6, (STOPS[i].dur * span) / stepSpan) : Math.min(2.5, 0.8 + span * 3);
+    dur = reduced ? 0.01 : to > g ? Math.max(0.6, (STOPS[i].dur * span) / stepSpan) : Math.min(2.5, 0.8 + span * 3);
   }
   function forward() {
     if (mode === 'content') return;
@@ -836,6 +862,14 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.15 });
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  // Parallax: the background grid of the content sections moves at 30% of the scroll (wide screens only).
+  const afterEl = document.querySelector('.after');
+  if (!reduced && afterEl) {
+    let queued = false;
+    const wide = matchMedia('(min-width: 861px)');
+    const paint = () => { queued = false; afterEl.style.setProperty('--par', wide.matches ? `${(scrollY * 0.3) % 160}px` : '0px'); };
+    addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(paint); } }, { passive: true });
+  }
   document.querySelectorAll('.glow').forEach(el => el.addEventListener('pointermove', e => {
     const r = el.getBoundingClientRect();
     el.style.setProperty('--mx', `${e.clientX - r.left}px`);
