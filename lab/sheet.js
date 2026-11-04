@@ -243,7 +243,8 @@ export function createSheet(kind) {
     const h = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * d * 1.06;
     const w = h * camera.aspect * 1.4; // extra width: the landing page shifts the view sideways
     const width = Math.round(Math.min(4096, Math.max(1600, (H * w) / h)));
-    if (width !== canvas.width) { draw(width); tex.needsUpdate = true; }
+    // A new size needs a new GPU texture (the old storage keeps its size): dispose, then upload again.
+    if (width !== canvas.width) { draw(width); tex.dispose(); tex.needsUpdate = true; }
     mesh.scale.set(w, h, 1);
     mesh.position.copy(target).addScaledVector(dir, -back);
     mesh.lookAt(mesh.position.clone().add(dir));
@@ -274,6 +275,7 @@ export function createBackdrop(kind) {
     ctx.fillStyle = '#07111F';
     ctx.fillRect(0, 0, W, H);
     base(ctx, BACKDROP[kind]);
+    texture.dispose(); // new size: let three.js allocate a new GPU texture
     texture.needsUpdate = true;
   }
   resize(innerWidth / Math.max(innerHeight, 1));

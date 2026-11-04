@@ -112,7 +112,8 @@ controls.target.set(10, 2, 0);
 controls.enableDamping = true;
 controls.maxPolarAngle = Math.PI * 0.47;
 
-scene.add(new THREE.HemisphereLight('#dbe7ff', '#1a2440', 1.1));
+const hemi = new THREE.HemisphereLight('#dbe7ff', '#1a2440', 1.1);
+scene.add(hemi);
 const sun = new THREE.DirectionalLight('#ffffff', 2.3);
 sun.position.set(70, 110, 50);
 sun.castShadow = true;
@@ -121,6 +122,60 @@ sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.05;
 Object.assign(sun.shadow.camera, { left: -75, right: 75, top: 60, bottom: -60, near: 10, far: 260 });
 scene.add(sun);
+
+// Cinematic look on wide screens (phones keep the light set-up above): a low, warm side light with long shadows,
+// a cool fill, depth haze, rippled water with sun glints, a slow camera drift and a soft glow on the brightest parts.
+const CINE = !LITE;
+const HAZE = '#14315c';
+const camRest = camera.position.clone(); // the drift turns and pushes the camera around this framing
+if (CINE) {
+  sun.color.set('#ffe8cc');
+  renderer.toneMappingExposure = 1.3;
+  sun.intensity = 3.4;
+  sun.position.set(95, 42, -75); // low, from the viewer's right: raking light, long shadows across the valley
+  Object.assign(sun.shadow.camera, { left: -115, right: 115, top: 95, bottom: -95, near: 1, far: 430 });
+  sun.shadow.camera.updateProjectionMatrix();
+  hemi.color.set('#9cc2ff');
+  hemi.groundColor.set('#0a1830');
+  hemi.intensity = 1.1;
+  scene.fog.near = 110;
+  scene.fog.far = 360;
+}
+let post = null;
+const NOPOST = QS.has('nopost'); // for measuring the glow's cost
+if (CINE && !NOPOST) {
+  const [{ EffectComposer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }] = await Promise.all([
+    import('three/addons/postprocessing/EffectComposer.js'), import('three/addons/postprocessing/RenderPass.js'),
+    import('three/addons/postprocessing/UnrealBloomPass.js'), import('three/addons/postprocessing/OutputPass.js'),
+  ]);
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.78));
+  composer.addPass(new OutputPass());
+  post = { render: () => composer.render(), setSize: (w, h) => { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); } };
+}
+// Tileable ripple normals for the water, drawn once into a small canvas.
+function rippleNormals() {
+  const N = 256, c = document.createElement('canvas');
+  c.width = c.height = N;
+  const g = c.getContext('2d'), img = g.createImageData(N, N);
+  const waves = [[3, 1, 0.5, 0.3], [-1, 4, 0.45, 1.7], [5, -3, 0.35, 2.9], [-4, 7, 0.3, 4.1], [9, 5, 0.2, 0.8], [-7, -11, 0.15, 5.3], [13, -6, 0.1, 2.2]];
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    let dx = 0, dy = 0;
+    for (const [kx, ky, a, ph] of waves) {
+      const s = Math.cos(((kx * x + ky * y) / N) * 2 * Math.PI + ph) * a * 2 * Math.PI / N * 40;
+      dx += s * kx; dy += s * ky;
+    }
+    const n = new THREE.Vector3(-dx, -dy, 1).normalize(), i = (y * N + x) * 4;
+    img.data[i] = (n.x * 0.5 + 0.5) * 255; img.data[i + 1] = (n.y * 0.5 + 0.5) * 255; img.data[i + 2] = (n.z * 0.5 + 0.5) * 255; img.data[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  const tx = new THREE.CanvasTexture(c);
+  tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
+  tx.repeat.set(4, 4);
+  return tx;
+}
+let ripples = null;
 
 // ------------------------------------------------------------------ materials (original look / maquette look)
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra });
@@ -149,6 +204,10 @@ const M = {
   road: [std('#4a4f57'), std('#c4ccd8'), bp('#0f2f63')],
   water: [std('#3b82c4', { transparent: true, opacity: 0.8, roughness: 0.2 }), std('#35C7E8', { transparent: true, opacity: 0.45, roughness: 0.2 }), bp('#35C7E8', { transparent: true, opacity: 0.28, emissive: '#35C7E8', emissiveIntensity: 0.35 })],
 };
+if (CINE) {
+  ripples = rippleNormals();
+  Object.assign(M.water[2], { normalMap: ripples, normalScale: new THREE.Vector2(0.18, 0.18), roughness: 0.12, metalness: 0.25 });
+}
 const IDX = { orig: 0, maq: 1, bp: 2 };
 let MODE = 'bp';
 function mesh(geo, key) {
@@ -400,7 +459,7 @@ function setMode(mode) {
     else if (o.userData.maqMat) o.material = [o.userData.origMat, o.userData.maqMat, o.userData.bpMat][i];
   });
   scene.background = mode === 'bp' ? backdrop.texture : new THREE.Color(BG[mode]);
-  scene.fog.color.set(BG[mode]);
+  scene.fog.color.set(mode === 'bp' && CINE ? HAZE : BG[mode]);
   for (const k of Object.keys(IDX)) document.getElementById(k).setAttribute('aria-pressed', k === mode);
 }
 for (const k of Object.keys(IDX)) document.getElementById(k).onclick = () => setMode(k);
@@ -502,6 +561,14 @@ function moveCamera(cam) {
   camera.lookAt(controls.target);
   if (cam <= 0) { camera.position.copy(home.p); controls.target.copy(home.t); home = null; controls.enabled = true; }
 }
+// Slow drift on the landing page: a gentle swing around the dam and a push-in as the dam rises. Time stops while the
+// chart is shown and with reduced motion, so it never jumps.
+const UP = new THREE.Vector3(0, 1, 0);
+function drift(c, t) {
+  const off = camRest.clone().sub(controls.target).applyAxisAngle(UP, 0.08 * Math.sin(t * 0.045)).multiplyScalar(1.06 - 0.1 * c);
+  camera.position.copy(controls.target).add(off);
+  camera.lookAt(controls.target);
+}
 
 const evmText = () => `<b>Ölçüm · ay ${SC.today}</b> · plan %${Math.round(SC.pv(SC.today))}, kazanılan %${Math.round(SC.ev(SC.today))}, harcanan %${Math.round(SC.ac(SC.today))} → SPI ${fmt(SC.spi)} · CPI ${fmt(SC.cpi)}. Janus: proje planın biraz önünde ve bütçe içinde.`;
 
@@ -600,6 +667,7 @@ function syncSize() {
   else camera.clearViewOffset();
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  if (post) post.setSize(innerWidth, innerHeight);
   labelRenderer.setSize(innerWidth, innerHeight);
   backdrop.resize(camera.aspect);
 }
@@ -610,7 +678,7 @@ let simT = 0;
 // Compile every material once up front (also the ones that are still hidden, e.g. the chart), so nothing compiles mid-animation.
 // Draw it once with everything shown, so geometry and textures are on the GPU before the scene is visible.
 { const hid = [], cull = []; scene.traverse(o => { if (!o.visible) { hid.push(o); o.visible = true; } if (o.frustumCulled) { cull.push(o); o.frustumCulled = false; } });
-  renderer.compile(scene, camera); renderer.render(scene, camera);
+  renderer.compile(scene, camera); renderer.render(scene, camera); if (post) post.render();
   hid.forEach(o => { o.visible = false; }); cull.forEach(o => { o.frustumCulled = true; }); }
 let lastPhase = '', warm = 0;
 renderer.setAnimationLoop(() => {
@@ -631,6 +699,8 @@ renderer.setAnimationLoop(() => {
   sheet.set(0.9 * st.fade);
   chart.set(st.k, st.chartFade);
   moveCamera(st.cam);
+  if (CINE && EMBED && !home) drift(st.c, simT);
+  if (ripples) ripples.offset.x += sdt * 0.004;
   if (st.evm && st.k > 0.6) { const h = evmText(); if (h !== lastPhase) document.getElementById('phase').innerHTML = lastPhase = h; }
   document.getElementById('pct').textContent = Math.round(progress * 100) + '%';
   document.getElementById('note').style.opacity = st.chartFade > 0.5 ? 1 : 0;
@@ -640,7 +710,7 @@ renderer.setAnimationLoop(() => {
     else s.obj.rotation[s.axis] += s.speed * sdt;
   }
   if (controls.enabled) controls.update();
-  renderer.render(scene, camera);
+  if (post) post.render(); else renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
 });
 Object.assign(window, { ARM, excavator, chart, stage, __ready: true, THREE, camera, controls, setProgress: v => { progress = v; playing = false; range.value = Math.round(v * 1000); } });
