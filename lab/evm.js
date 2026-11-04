@@ -41,12 +41,12 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
     return m;
   };
   const C = {
-    pv: mat('#a78bfa', { emissive: '#7c3aed', emissiveIntensity: 0.6 }),
-    ev: mat('#22d3ee', { emissive: '#22d3ee', emissiveIntensity: 0.7 }),
+    pv: mat('#8FDCF0', { emissive: '#3478F6', emissiveIntensity: 0.6 }),
+    ev: mat('#35C7E8', { emissive: '#35C7E8', emissiveIntensity: 0.7 }),
     ac: mat('#fbbf24', { emissive: '#f59e0b', emissiveIntensity: 0.6 }),
-    col: mat('#22d3ee', { opacity: 0.28, emissive: '#0e7490', emissiveIntensity: 0.4, depthWrite: false }),
-    pvBar: mat('#a78bfa', { opacity: 0.55, emissive: '#7c3aed', emissiveIntensity: 0.5 }),
-    evBar: mat('#22d3ee', { opacity: 0.75, emissive: '#22d3ee', emissiveIntensity: 0.6 }),
+    col: mat('#35C7E8', { opacity: 0.28, emissive: '#0e7490', emissiveIntensity: 0.4, depthWrite: false }),
+    pvBar: mat('#8FDCF0', { opacity: 0.55, emissive: '#3478F6', emissiveIntensity: 0.5 }),
+    evBar: mat('#35C7E8', { opacity: 0.75, emissive: '#35C7E8', emissiveIntensity: 0.6 }),
     colEdge: lineMat('#a5f3fc', 0.8),
     axis: lineMat('#cfe8ff', 0.7),
     grid: lineMat('#5fa8ff', 0.3, true),
@@ -157,10 +157,10 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
 @media (max-width: 600px) {
   .evm-label.pv, .evm-label.ev, .evm-label.ac, .evm-label.fc, .evm-label.kpi { display: none; }
   .evm-strip { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 12px; position: fixed; left: 12px; right: 12px; top: 72px; z-index: 2; pointer-events: none;
-    font: 600 11px/1.3 system-ui, sans-serif; color: #e6edf7; text-shadow: 0 1px 6px #0a1f44; }
+    font: 600 11px/1.3 system-ui, sans-serif; color: #e6edf7; text-shadow: 0 1px 6px #07111F; }
   .evm-strip > span { transition: opacity .35s; white-space: nowrap; }
   .evm-strip i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
-  .evm-strip .kpi { background: rgba(10, 31, 68, .85); border: 1px solid #22d3ee; border-radius: 8px; padding: 3px 8px; }
+  .evm-strip .kpi { background: rgba(7, 17, 31, .85); border: 1px solid #35C7E8; border-radius: 8px; padding: 3px 8px; }
   .evm-strip .kpi b { color: #67e8f9; font-size: 14px; margin-left: 4px; }
   .evm-strip .row { flex-basis: 100%; height: 0; }
 }`;
@@ -171,7 +171,7 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
   strip.setAttribute('aria-hidden', 'true');
   const chips = [];
   const chip = (html, at, cls = '') => { const s = document.createElement('span'); s.className = cls; s.innerHTML = html; strip.appendChild(s); chips.push([s, at]); };
-  chip(`<i style="background:#c4b5fd"></i>${L_('PV planlanan', 'PV planned')}`, 0.45);
+  chip(`<i style="background:#8FDCF0"></i>${L_('PV planlanan', 'PV planned')}`, 0.45);
   chip(`<i style="background:#67e8f9"></i>${L_('EV kazanılmış', 'EV earned')}`, 0.6);
   if (ac) chip(`<i style="background:#fcd34d"></i>${L_('AC gerçekleşen', 'AC actual')}`, 0.7);
   if (es) chip(`<i style="background:#67e8f9"></i>${L_('ES ay', 'ES month')} ${fmt(sc.es, 1)}`, 0.8);

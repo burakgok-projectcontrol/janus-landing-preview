@@ -5,22 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Janus gökdelen sahnesi</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #0a1f44; color: #e6edf7; font: 14px/1.4 system-ui, sans-serif; overflow: hidden; }
+  html, body { margin: 0; height: 100%; background: #07111F; color: #e6edf7; font: 14px/1.4 system-ui, sans-serif; overflow: hidden; }
   canvas { display: block; }
   .top { position: fixed; top: 12px; left: 12px; display: flex; gap: 8px; flex-wrap: wrap; z-index: 2; }
-  button { background: #131f36; color: inherit; border: 1px solid #22304d; border-radius: 8px; padding: 8px 12px; cursor: pointer; font: inherit; }
-  button[aria-pressed="true"] { background: linear-gradient(135deg, #22d3ee, #7c3aed); border-color: transparent; color: #fff; }
+  button { background: #111C2B; color: inherit; border: 1px solid #22304d; border-radius: 8px; padding: 8px 12px; cursor: pointer; font: inherit; }
+  button[aria-pressed="true"] { background: linear-gradient(135deg, #35C7E8, #3478F6); border-color: transparent; color: #fff; }
   .bar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(720px, calc(100% - 32px)); background: rgba(19, 31, 54, .88); border: 1px solid #22304d; border-radius: 14px; padding: 12px 16px; display: grid; grid-template-columns: auto 1fr auto; gap: 8px 14px; align-items: center; backdrop-filter: blur(8px); z-index: 2; }
   .bar .phase { grid-column: 1 / -1; color: #9fb0c9; font-size: 13px; }
   .bar .phase b { color: #e6edf7; font-weight: 600; }
   .pct { font-variant-numeric: tabular-nums; min-width: 4ch; text-align: right; font-weight: 600; }
-  input[type=range] { width: 100%; accent-color: #22d3ee; }
+  input[type=range] { width: 100%; accent-color: #35C7E8; }
   .labels-layer { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
-  .evm-label { font: 600 12px/1.2 system-ui, sans-serif; color: #e6edf7; white-space: nowrap; transition: opacity .35s; text-shadow: 0 1px 6px #0a1f44; }
-  .evm-label.pv { color: #c4b5fd; }
+  .evm-label { font: 600 12px/1.2 system-ui, sans-serif; color: #e6edf7; white-space: nowrap; transition: opacity .35s; text-shadow: 0 1px 6px #07111F; }
+  .evm-label.pv { color: #8FDCF0; }
   .evm-label.ev { color: #67e8f9; }
   .evm-label.ac { color: #fcd34d; }
-  .evm-label.kpi { background: rgba(10, 31, 68, .85); border: 1px solid #22d3ee; border-radius: 10px; padding: 8px 12px; font-size: 13px; }
+  .evm-label.kpi { background: rgba(7, 17, 31, .85); border: 1px solid #35C7E8; border-radius: 10px; padding: 8px 12px; font-size: 13px; }
   .evm-label.kpi.warn { border-color: #fbbf24; }
   .evm-label.kpi b { font-size: 22px; margin-left: 6px; color: #67e8f9; }
   .evm-label.kpi.warn b { color: #fcd34d; }
@@ -92,8 +92,8 @@ document.body.appendChild(labelRenderer.domElement);
 
 const scene = new THREE.Scene();
 const backdrop = createBackdrop('tower'); // blueprint paper behind the whole scene
-scene.background = new THREE.Color('#0a1f44');
-scene.fog = new THREE.Fog('#0a1f44', 220, 460);
+scene.background = new THREE.Color('#07111F');
+scene.fog = new THREE.Fog('#07111F', 220, 460);
 const camera = new THREE.PerspectiveCamera(32, 1, 1, 1500);
 camera.position.set(112, 72, 150);
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -115,15 +115,15 @@ scene.add(sun);
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra });
 const bp = (color, extra = {}) => std(color, { roughness: 1, ...extra });
 const MAQ = std('#f2f4f8', { side: THREE.DoubleSide });
-const ACCENT = std('#22d3ee', { roughness: 0.6, emissive: '#0b4f5c', emissiveIntensity: 0.3 });
+const ACCENT = std('#35C7E8', { roughness: 0.6, emissive: '#0b4f5c', emissiveIntensity: 0.3 });
 const BP_EDGE = new THREE.LineBasicMaterial({ color: '#cfe8ff', transparent: true, opacity: 0.7 });
 const BP = {
   machine: bp('#1a4589', { side: THREE.DoubleSide }),
   dark: bp('#10306a'),
-  glass: bp('#22d3ee', { transparent: true, opacity: 0.25, emissive: '#22d3ee', emissiveIntensity: 0.2 }),
+  glass: bp('#35C7E8', { transparent: true, opacity: 0.25, emissive: '#35C7E8', emissiveIntensity: 0.2 }),
   steel: bp('#2b62b5'),
-  light: bp('#22d3ee', { emissive: '#22d3ee', emissiveIntensity: 1 }),
-  worker: bp('#5eead4', { emissive: '#22d3ee', emissiveIntensity: 0.7 }),
+  light: bp('#35C7E8', { emissive: '#35C7E8', emissiveIntensity: 1 }),
+  worker: bp('#5eead4', { emissive: '#35C7E8', emissiveIntensity: 0.7 }),
 };
 const M = {
   ground: [std('#8d9478'), std('#d5dce6'), bp('#123468')],
@@ -133,8 +133,8 @@ const M = {
   city: [std('#9aa3ad'), std('#e7ebf1'), bp('#16407f', { transparent: true, opacity: 0.85 })],
   concrete: [std('#b8bcc2'), std('#f7f8fb'), bp('#1f539e')],
   slab: [std('#a9adb3'), std('#eef1f6'), bp('#1c4d96')],
-  active: [std('#c9a876', { emissive: '#3a2a10', emissiveIntensity: 0.2 }), std('#a5f3fc', { emissive: '#0e7490', emissiveIntensity: 0.35 }), bp('#1e9fd0', { emissive: '#22d3ee', emissiveIntensity: 0.35, transparent: true, opacity: 0.85 })],
-  glass: [std('#6f93b5', { transparent: true, opacity: 0.6, roughness: 0.15, metalness: 0.3, emissive: '#ffd27a', emissiveIntensity: 0 }), std('#9fb6cc', { transparent: true, opacity: 0.55, roughness: 0.2, emissive: '#22d3ee', emissiveIntensity: 0 }), bp('#22d3ee', { transparent: true, opacity: 0.22, emissive: '#22d3ee', emissiveIntensity: 0.25 })],
+  active: [std('#c9a876', { emissive: '#3a2a10', emissiveIntensity: 0.2 }), std('#a5f3fc', { emissive: '#0e7490', emissiveIntensity: 0.35 }), bp('#1e9fd0', { emissive: '#35C7E8', emissiveIntensity: 0.35, transparent: true, opacity: 0.85 })],
+  glass: [std('#6f93b5', { transparent: true, opacity: 0.6, roughness: 0.15, metalness: 0.3, emissive: '#ffd27a', emissiveIntensity: 0 }), std('#9fb6cc', { transparent: true, opacity: 0.55, roughness: 0.2, emissive: '#35C7E8', emissiveIntensity: 0 }), bp('#35C7E8', { transparent: true, opacity: 0.22, emissive: '#35C7E8', emissiveIntensity: 0.25 })],
   steelLoad: [std('#7d8590'), std('#cfd6e0'), bp('#2b62b5')],
 };
 const IDX = { orig: 0, maq: 1, bp: 2 };
@@ -234,7 +234,7 @@ function proc(name, opts, mats) {
   return g;
 }
 // The crane keeps its own blueprint materials: it stays bright while the site dims for the EVM view.
-const CRANE_BP = new Map([[ORIG.body, bp('#2a62b8', { side: THREE.DoubleSide })], [ORIG.dark, bp('#163d7d')], [ORIG.glass, bp('#22d3ee', { emissive: '#22d3ee', emissiveIntensity: 0.4 })], [ORIG.steel, bp('#3a74c8')], [ORIG.light, bp('#fbbf24', { emissive: '#fbbf24', emissiveIntensity: 1 })]]);
+const CRANE_BP = new Map([[ORIG.body, bp('#2a62b8', { side: THREE.DoubleSide })], [ORIG.dark, bp('#163d7d')], [ORIG.glass, bp('#35C7E8', { emissive: '#35C7E8', emissiveIntensity: 0.4 })], [ORIG.steel, bp('#3a74c8')], [ORIG.light, bp('#fbbf24', { emissive: '#fbbf24', emissiveIntensity: 1 })]]);
 const CRANE = new THREE.Vector3(-14, 0, 13);
 const crane = proc('towerCrane', { sections: 26 }, CRANE_BP);
 crane.position.copy(CRANE);
@@ -299,10 +299,10 @@ const EV_POS = new THREE.Vector3(-30, 0, 6), AC_POS = new THREE.Vector3(-39, 0, 
 const chartMats = [];
 const cmat = (color, extra = {}) => { const m = new THREE.MeshStandardMaterial({ color, roughness: 0.6, transparent: true, ...extra }); m.userData.base = m.opacity; chartMats.push(m); return m; };
 const CM = {
-  ev: cmat('#22d3ee', { emissive: '#22d3ee', emissiveIntensity: 0.55, opacity: 0.9 }),
+  ev: cmat('#35C7E8', { emissive: '#35C7E8', emissiveIntensity: 0.55, opacity: 0.9 }),
   ac: cmat('#fbbf24', { emissive: '#f59e0b', emissiveIntensity: 0.5, opacity: 0.9 }),
   eac: cmat('#fbbf24', { emissive: '#f59e0b', emissiveIntensity: 0.35, opacity: 0.35, depthWrite: false }),
-  bac: cmat('#a78bfa', { emissive: '#7c3aed', emissiveIntensity: 0.7, opacity: 0.9 }),
+  bac: cmat('#8FDCF0', { emissive: '#3478F6', emissiveIntensity: 0.7, opacity: 0.9 }),
 };
 const edgeMat = new THREE.LineBasicMaterial({ color: '#fde68a', transparent: true, opacity: 0.9 });
 edgeMat.userData.base = 0.9;
@@ -360,7 +360,7 @@ for (const o of edgeTargets) {
   e.userData.bpOnly = true;
   o.add(e);
 }
-const BG = { orig: '#0b1220', maq: '#0b1220', bp: '#0a1f44' };
+const BG = { orig: '#07111F', maq: '#07111F', bp: '#07111F' };
 function setMode(mode) {
   MODE = mode;
   const i = IDX[mode];
@@ -454,7 +454,7 @@ function fadeSite(f) {
     mt.depthWrite = f > 0.6;
   }
 }
-const FLY = new THREE.MeshStandardMaterial({ color: '#22d3ee', emissive: '#22d3ee', emissiveIntensity: 0.55, transparent: true, opacity: 0.9, roughness: 0.6 });
+const FLY = new THREE.MeshStandardMaterial({ color: '#35C7E8', emissive: '#35C7E8', emissiveIntensity: 0.55, transparent: true, opacity: 0.9, roughness: 0.6 });
 function flyFloors(fly) {
   const evH = (STACK_H * SCN.ev) / 100 / builtAtToday;
   floors.forEach(f => {

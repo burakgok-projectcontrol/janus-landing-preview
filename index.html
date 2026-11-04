@@ -29,16 +29,16 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Janus — Geçmişi ölç, geleceği yönet</title>
+<title>JANUS — Geçmişi Ölç, Geleceği Yönet</title>
 <meta name="description" content="Janus, inşaat projeleri için BOQ (metraj-keşif) merkezli, yapay zekâ destekli proje kontrol platformudur. Sahada yükselen her şey, Janus'ta ölçülen bir değerdir.">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0a1f44">
+<meta name="theme-color" content="#07111F">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='120' height='120' rx='28' fill='url(%23g)'/%3E%3Cpath d='M50 18A42 42 0 0 0 50 102M70 18A42 42 0 0 1 70 102' fill='none' stroke='%23fff' stroke-width='14' stroke-linecap='round'/%3E%3Ccircle cx='60' cy='60' r='11' fill='%23fff'/%3E%3C/svg%3E">
 <style>
   :root {
-    --bg: #0a1f44; --bg2: #0d2552; --card: rgba(13, 37, 82, .72); --line: rgba(165, 214, 255, .22);
-    --text: #e6edf7; --muted: #a9bad3; --cyan: #22d3ee; --violet: #a78bfa; --amber: #fbbf24;
-    --grad: linear-gradient(135deg, #22d3ee, #7c3aed);
+    --bg: #07111F; --bg2: #111C2B; --card: rgba(17, 28, 43, .9); --line: rgba(165, 214, 255, .22);
+    --text: #F1F5F9; --muted: #A3B0C1; --cyan: #35C7E8; --blue: #3478F6; --amber: #fbbf24;
+    --grad: #2B67DB;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -46,7 +46,7 @@
   body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
   a { color: inherit; }
   :focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; border-radius: 6px; }
-  .skip { position: absolute; left: -999px; top: 8px; z-index: 50; background: var(--bg2); padding: 8px 14px; border-radius: 8px; }
+  .skip { position: absolute; left: -999px; top: 8px; z-index: 50; background: var(--bg2); padding: 8px 14px; border-radius: 3px; }
   .skip:focus { left: 8px; }
 
   /* Stage: the 3D scenes live in fixed, full-screen frames behind the scrolling content. */
@@ -54,21 +54,22 @@
   .stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity .25s linear; pointer-events: none; }
   .loading { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 14px; z-index: 1; transition: opacity .4s; }
 
-  header { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; align-items: center; gap: 16px; padding: 14px 20px; background: linear-gradient(to bottom, rgba(10,31,68,.85), rgba(10,31,68,0)); transition: background .3s; }
-  header.solid { background: rgba(10, 31, 68, .9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  header { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; align-items: center; gap: 16px; padding: 14px 20px; background: linear-gradient(to bottom, rgba(7, 17, 31,.85), rgba(7, 17, 31,0)); transition: background .3s; }
+  header.solid { background: rgba(7, 17, 31, .9); border-bottom: 1px solid var(--line); }
   .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.15rem; text-decoration: none; }
-  .btn { display: inline-block; padding: 12px 22px; border-radius: 12px; background: var(--grad); color: #fff; font-weight: 600; text-decoration: none; box-shadow: 0 10px 30px -10px rgba(124, 58, 237, .7); }
+  .brand span, .foot-brand b { letter-spacing: .16em; }
+  .btn { display: inline-block; padding: 12px 22px; border-radius: 3px; background: var(--grad); color: #fff; font-weight: 600; text-decoration: none; box-shadow: none; }
   .btn-sm { padding: 8px 16px; font-size: .92rem; }
-  .lang { margin-left: auto; display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: rgba(10, 31, 68, .6); }
-  .lang button { all: unset; cursor: pointer; padding: 5px 11px; border-radius: 999px; font: 600 .8rem/1 system-ui, sans-serif; letter-spacing: .06em; color: var(--muted); }
-  .lang button[aria-pressed="true"] { background: rgba(34, 211, 238, .16); color: var(--text); }
+  .lang { margin-left: auto; display: inline-flex; border: 1px solid var(--line); border-radius: 2px; padding: 3px; background: rgba(7, 17, 31, .6); }
+  .lang button { all: unset; cursor: pointer; padding: 5px 11px; border-radius: 2px; font: 600 .8rem/1 system-ui, sans-serif; letter-spacing: .06em; color: var(--muted); }
+  .lang button[aria-pressed="true"] { background: rgba(53, 199, 232, .16); color: var(--text); }
   .lang button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
   @media (max-width: 420px) { header { gap: 10px; padding: 12px 14px; } .btn-sm { padding: 8px 12px; font-size: .85rem; } }
 
   /* Story mode: the page does not scroll; wheel / swipe / keys advance the scenes step by step. */
   html.story, html.story body { overflow: hidden; }
   .spacer { height: 100vh; }
-  .next { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 8px); z-index: 7; display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 999px; border: 1px solid var(--line); background: rgba(10, 31, 68, .78); color: var(--text); font: 600 .92rem/1 system-ui, sans-serif; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .35s, transform .35s; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .next { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 8px); z-index: 7; display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 2px; border: 1px solid var(--line); background: rgba(7, 17, 31, .78); color: var(--text); font: 600 .92rem/1 system-ui, sans-serif; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .35s, transform .35s; }
   .next.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
   .next { white-space: nowrap; }
   .next svg { animation: nudge 1.6s infinite; }
@@ -81,17 +82,17 @@
      (which starts at ~40vw), centred in it. */
   .captions { --capw: clamp(330px, 27vw, 420px); position: fixed; z-index: 5; top: 50%; transform: translateY(-50%); width: var(--capw); pointer-events: none;
     left: max(calc(4.9vh + 24px), calc((4.9vh + 40vw) / 2 - var(--capw) / 2)); }
-  .cap { position: absolute; left: 0; top: 0; transform: translateY(-50%); opacity: 0; transition: opacity .45s ease, transform .45s ease; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .cap { position: absolute; left: 0; top: 0; transform: translateY(-50%); opacity: 0; transition: opacity .45s ease, transform .45s ease; background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 20px 22px; }
   .cap.on { opacity: 1; transform: translateY(calc(-50% - 6px)); pointer-events: auto; }
   .cap .eyebrow { color: var(--cyan); font-weight: 600; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; margin: 0 0 8px; }
   .cap h2 { margin: 0 0 12px; font-size: clamp(1.35rem, 1.9vw, 1.75rem); line-height: 1.2; letter-spacing: -.01em; }
   .cap p { margin: 0; color: var(--muted); font-size: clamp(.95rem, 1.1vw, 1.05rem); line-height: 1.65; }
   .cap:not(.hero-cap) { padding: 26px 26px; width: 100%; box-sizing: border-box; }
   .cap p b { color: var(--text); font-weight: 600; }
-  .hero-cap { background: none; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 0; width: min(620px, calc(100vw - 32px)); }
-  .hero-cap h1 { margin: 0 0 16px; font-size: clamp(2.4rem, 6vw, 4.2rem); line-height: 1.05; letter-spacing: -.02em; text-shadow: 0 2px 30px rgba(10, 31, 68, .8); }
-  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .hero-cap p { font-size: 1.15rem; color: var(--text); text-shadow: 0 1px 12px rgba(10, 31, 68, .9); max-width: 46ch; }
+  .hero-cap { background: none; border: 0; padding: 0; width: min(620px, calc(100vw - 32px)); }
+  .hero-cap h1 { margin: 0 0 16px; font-size: clamp(2.4rem, 6vw, 4.2rem); line-height: 1.05; letter-spacing: -.02em; text-shadow: 0 2px 30px rgba(7, 17, 31, .8); }
+  .grad { color: var(--cyan); }
+  .hero-cap p { font-size: 1.15rem; color: var(--text); text-shadow: 0 1px 12px rgba(7, 17, 31, .9); max-width: 46ch; }
   .hint { margin-top: 26px; display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: .9rem; }
   .hint i { width: 22px; height: 34px; border: 2px solid var(--muted); border-radius: 12px; position: relative; }
   .hint i::after { content: ""; position: absolute; left: 50%; top: 6px; width: 4px; height: 7px; margin-left: -2px; border-radius: 2px; background: var(--cyan); animation: wheel 1.6s infinite; }
@@ -115,14 +116,14 @@
   h2.big { font-size: clamp(1.8rem, 3.6vw, 2.6rem); line-height: 1.15; margin: 0 0 14px; letter-spacing: -.02em; max-width: 24ch; }
   .sub { color: var(--muted); max-width: 70ch; margin: 0 0 36px; }
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 22px; }
   .card h3 { margin: 0 0 8px; font-size: 1.12rem; }
   .card p { margin: 0; color: var(--muted); font-size: .96rem; }
   .chips { list-style: none; padding: 0; margin: 26px 0 0; display: flex; flex-wrap: wrap; gap: 10px; }
-  .chips li { border: 1px solid var(--line); padding: 7px 14px; border-radius: 999px; font-size: .92rem; color: var(--muted); }
+  .chips li { border: 1px solid var(--line); padding: 7px 14px; border-radius: 2px; font-size: .92rem; color: var(--muted); }
   .ticks { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
-  .ticks li { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 14px 46px; position: relative; color: var(--muted); }
-  .ticks li::before { content: ""; position: absolute; left: 16px; top: 19px; width: 16px; height: 16px; border-radius: 50%; background: var(--grad); }
+  .ticks li { background: var(--card); border: 1px solid var(--line); border-radius: 3px; padding: 14px 16px 14px 46px; position: relative; color: var(--muted); }
+  .ticks li::before { content: ""; position: absolute; left: 19px; top: 22px; width: 10px; height: 10px; border-radius: 1px; background: var(--grad); }
   .ticks b { color: var(--text); }
   .two { display: grid; grid-template-columns: 1fr 1.2fr; gap: 48px; align-items: start; }
   .cta { text-align: center; }
@@ -138,18 +139,18 @@
   .after > * { position: relative; }
   .glow { position: relative; isolation: isolate; transition: transform .35s ease, border-color .35s, box-shadow .35s, background .35s; }
   .glow::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; opacity: 0; transition: opacity .35s;
-    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(34, 211, 238, .22), transparent 45%); }
-  .glow:hover, .glow:focus-visible, .glow.on { border-color: rgba(34, 211, 238, .7); box-shadow: 0 0 0 1px rgba(34, 211, 238, .25), 0 18px 50px -18px rgba(34, 211, 238, .55); transform: translateY(-3px); }
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(53, 199, 232, .22), transparent 45%); }
+  .glow:hover, .glow:focus-visible, .glow.on { border-color: rgba(53, 199, 232, .7); box-shadow: 0 0 0 1px rgba(53, 199, 232, .25), 0 18px 50px -18px rgba(53, 199, 232, .55); transform: translateY(-3px); }
   .glow:hover::after, .glow:focus-visible::after, .glow.on::after { opacity: 1; }
   /* Pointer on a card: a warm, see-through amber accent (border, soft glow, light tint, spotlight). */
   .glow:hover, .glow:focus-visible { border-color: rgba(251, 191, 36, .75); background: rgba(251, 191, 36, .07); box-shadow: 0 0 0 1px rgba(251, 191, 36, .25), 0 18px 50px -18px rgba(251, 191, 36, .5); }
   .glow:hover::after, .glow:focus-visible::after { background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(251, 191, 36, .16), transparent 45%); }
   .glow:hover .ico, .glow:focus-visible .ico { color: #fcd34d; border-color: rgba(251, 191, 36, .5); background: rgba(251, 191, 36, .12); }
   .cap:not(.hero-cap) { transition: opacity .45s ease, transform .45s ease, border-color .35s, background .35s, box-shadow .35s; }
-  .cap:not(.hero-cap) { border-color: rgba(251, 191, 36, .75); background: linear-gradient(rgba(251, 191, 36, .08), rgba(251, 191, 36, .08)), rgba(13, 37, 82, .6); box-shadow: 0 0 0 1px rgba(251, 191, 36, .22), 0 18px 50px -18px rgba(251, 191, 36, .5); }
+  .cap:not(.hero-cap) { border-color: rgba(251, 191, 36, .75); background: linear-gradient(rgba(251, 191, 36, .08), rgba(251, 191, 36, .08)), rgba(17, 28, 43, .9); box-shadow: 0 0 0 1px rgba(251, 191, 36, .22), 0 18px 50px -18px rgba(251, 191, 36, .5); }
   .cap:not(.hero-cap) .eyebrow { color: #fbbf24; } /* story cards stay lit in amber; content cards light up on hover */
   .ico { transition: color .35s, border-color .35s, background .35s; }
-  .card .ico { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; margin-bottom: 12px; background: linear-gradient(135deg, rgba(34, 211, 238, .2), rgba(124, 58, 237, .25)); border: 1px solid var(--line); color: #a5f3fc; }
+  .card .ico { width: 38px; height: 38px; border-radius: 4px; display: grid; place-items: center; margin-bottom: 12px; background: rgba(53, 199, 232, .12); border: 1px solid var(--line); color: #a5f3fc; }
   .card.pick { cursor: pointer; }
   .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; transition-delay: var(--d, 0s); }
   .reveal.in { opacity: 1; transform: none; }
@@ -161,15 +162,15 @@
   .feat .card h3 { font-size: 1.02rem; }
   .feat .card p { font-size: .9rem; }
   .monitor-wrap { position: sticky; top: 110px; perspective: 1400px; }
-  .monitor { position: relative; border-radius: 16px; border: 1px solid rgba(34, 211, 238, .45); background: #0b2350; padding: 10px 10px 12px;
-    transform: rotateY(-14deg) rotateX(6deg); transform-style: preserve-3d; transition: transform .5s ease; box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .7), 0 0 60px -10px rgba(34, 211, 238, .35); animation: float 7s ease-in-out infinite; }
+  .monitor { position: relative; border-radius: 4px; border: 1px solid rgba(53, 199, 232, .45); background: #111C2B; padding: 10px 10px 12px;
+    transform: rotateY(-14deg) rotateX(6deg); transform-style: preserve-3d; transition: transform .5s ease; box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .7), 0 0 60px -10px rgba(53, 199, 232, .35); animation: float 7s ease-in-out infinite; }
   @keyframes float { 50% { translate: 0 -10px; } }
   .monitor .dots { display: flex; gap: 6px; padding: 2px 4px 10px; }
   .monitor .dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(165, 214, 255, .35); }
-  .monitor .screen { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 8px; background: #fff; }
+  .monitor .screen { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 3px; background: #fff; }
   .monitor .screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top left; opacity: 0; transform: translateZ(0) scale(1.04); transition: opacity .55s ease, transform .9s ease; }
   .monitor .screen img.on { opacity: 1; transform: scale(1); }
-  .monitor .scan { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 0%, rgba(34, 211, 238, .18) 50%, transparent 100%); background-size: 100% 220%; animation: scan 5s linear infinite; mix-blend-mode: screen; }
+  .monitor .scan { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 0%, rgba(53, 199, 232, .18) 50%, transparent 100%); background-size: 100% 220%; animation: scan 5s linear infinite; mix-blend-mode: screen; }
   @keyframes scan { from { background-position: 0 -120%; } to { background-position: 0 220%; } }
   .monitor-cap { margin-top: 16px; color: var(--muted); font-size: .88rem; min-height: 2.6em; }
   .monitor-cap b { color: var(--text); }
@@ -185,7 +186,7 @@
   }
 
   /* Opening: Janus drawn as a blueprint — past (left, solid), today (centre), future (right, projected). */
-  #intro { position: fixed; inset: 0; z-index: 40; background: #0a1f44; display: grid; place-items: center; overflow: hidden; transition: opacity .8s ease; cursor: pointer; }
+  #intro { position: fixed; inset: 0; z-index: 40; background: #07111F; display: grid; place-items: center; overflow: hidden; transition: opacity .8s ease; cursor: pointer; }
   #intro::before { content: ""; position: absolute; inset: 0; opacity: 0; animation: fadeIn .8s ease forwards;
     background-image: linear-gradient(rgba(120, 180, 255, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .07) 1px, transparent 1px),
       linear-gradient(rgba(120, 180, 255, .15) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .15) 1px, transparent 1px);
@@ -204,7 +205,7 @@
   #intro .heads img { position: absolute; left: calc(50vw - 263 * var(--u)); top: calc(50vh - 260 * var(--u)); width: calc(560 * var(--u)); height: calc(533 * var(--u));
     clip-path: circle(0 at 46.96% 45.03%); will-change: clip-path; animation: bustReveal 2.6s cubic-bezier(.45, 0, .25, 1) .9s forwards; }
   #intro .heads .scan { position: absolute; left: calc(50vw - 600 * var(--u)); top: calc(50vh - 620 * var(--u)); width: calc(1200 * var(--u)); height: calc(1200 * var(--u));
-    border: 2px solid #22d3ee; border-radius: 50%; opacity: .85; transform: scale(0); will-change: transform, opacity;
+    border: 2px solid #35C7E8; border-radius: 50%; opacity: .85; transform: scale(0); will-change: transform, opacity;
     animation: scanGrow 2.6s cubic-bezier(.45, 0, .25, 1) .9s forwards, scanOut .6s linear 2.9s forwards; }
   @keyframes bustReveal { to { clip-path: circle(110% at 46.96% 45.03%); } }
   @keyframes scanGrow { to { transform: scale(1); } }
@@ -249,7 +250,7 @@
     .cap .eyebrow { font-size: .7rem; margin-bottom: 6px; }
     .cap h2 { font-size: 1.15rem; margin-bottom: 6px; }
     .cap p { font-size: .86rem; line-height: 1.5; }
-    .hero-cap { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); width: 100%; box-sizing: border-box; }
+    .hero-cap { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; width: 100%; box-sizing: border-box; }
     .hero-cap h1 { font-size: 1.75rem; margin-bottom: 8px; }
     .hero-cap p { font-size: .9rem; }
     .hint { margin-top: 12px; }
@@ -267,8 +268,8 @@
   </div>
   <svg viewBox="0 0 1200 700" aria-hidden="true">
     <defs>
-      <linearGradient id="ifut" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
-      <radialGradient id="iglowg"><stop offset="0" stop-color="#22d3ee" stop-opacity=".9"/><stop offset=".45" stop-color="#22d3ee" stop-opacity=".45"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+      <linearGradient id="ifut" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35C7E8"/><stop offset="1" stop-color="#8FDCF0"/></linearGradient>
+      <radialGradient id="iglowg"><stop offset="0" stop-color="#35C7E8" stop-opacity=".9"/><stop offset=".45" stop-color="#35C7E8" stop-opacity=".45"/><stop offset="1" stop-color="#35C7E8" stop-opacity="0"/></radialGradient>
     </defs>
     <!-- sheet frame and construction geometry -->
     <g fill="none" stroke="#cfe8ff" stroke-opacity=".55">
@@ -282,17 +283,17 @@
     <line class="draw dash" pathLength="1" style="--d:1.6s;--t:1s" x1="600" y1="40" x2="600" y2="660" stroke="#ffffff" stroke-opacity=".8" stroke-width="1.6"/>
     <text class="fade" style="--d:2.6s" x="600" y="72" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="20" font-weight="700" letter-spacing="4" data-en="TODAY">BUGÜN</text>
     <!-- past: measured, solid -->
-    <g><rect class="grow" style="--d:3.00s" x="96" y="542" width="24" height="18" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.10s" x="136" y="526" width="24" height="34" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.20s" x="176" y="502" width="24" height="58" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.30s" x="216" y="468" width="24" height="92" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.40s" x="256" y="430" width="24" height="130" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.50s" x="296" y="392" width="24" height="168" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.60s" x="336" y="364" width="24" height="196" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/></g>
-    <path class="draw" pathLength="1" style="--d:3.2s;--t:1.2s" d="M90 556 C180 552 260 520 330 440 C350 412 362 380 370 360" fill="none" stroke="#22d3ee" stroke-width="3"/>
+    <g><rect class="grow" style="--d:3.00s" x="96" y="542" width="24" height="18" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.10s" x="136" y="526" width="24" height="34" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.20s" x="176" y="502" width="24" height="58" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.30s" x="216" y="468" width="24" height="92" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.40s" x="256" y="430" width="24" height="130" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.50s" x="296" y="392" width="24" height="168" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.60s" x="336" y="364" width="24" height="196" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/></g>
+    <path class="draw" pathLength="1" style="--d:3.2s;--t:1.2s" d="M90 556 C180 552 260 520 330 440 C350 412 362 380 370 360" fill="none" stroke="#35C7E8" stroke-width="3"/>
     <text class="fade" style="--d:3.4s" x="96" y="610" fill="#e6edf7" font-family="system-ui, sans-serif" font-size="26" font-weight="800" letter-spacing="3" data-en="PAST">GEÇMİŞ</text>
     <text class="fade" style="--d:3.6s" x="96" y="638" fill="#9fb0c9" font-family="system-ui, sans-serif" font-size="16" data-en="actual · measured · on record">gerçekleşen · ölçülen · kayıt altında</text>
     <!-- future: projected, dashed cone -->
     <g fill="none" stroke-width="2.4" stroke-linecap="round">
       <path class="draw" pathLength="1" style="--d:3.8s;--t:1.3s" d="M830 360 C900 300 980 240 1110 214" stroke="url(#ifut)" stroke-dasharray="10 9"/>
-      <path class="draw" pathLength="1" style="--d:4.0s;--t:1.3s" d="M830 360 C910 330 990 300 1110 290" stroke="#a78bfa" stroke-opacity=".6"/>
-      <path class="draw" pathLength="1" style="--d:4.0s;--t:1.3s" d="M830 360 C900 270 980 190 1110 150" stroke="#a78bfa" stroke-opacity=".6"/>
+      <path class="draw" pathLength="1" style="--d:4.0s;--t:1.3s" d="M830 360 C910 330 990 300 1110 290" stroke="#8FDCF0" stroke-opacity=".6"/>
+      <path class="draw" pathLength="1" style="--d:4.0s;--t:1.3s" d="M830 360 C900 270 980 190 1110 150" stroke="#8FDCF0" stroke-opacity=".6"/>
     </g>
-    <text class="fade" style="--d:4.2s" x="1104" y="610" text-anchor="end" fill="#c4b5fd" font-family="system-ui, sans-serif" font-size="26" font-weight="800" letter-spacing="3" data-en="FUTURE">GELECEK</text>
+    <text class="fade" style="--d:4.2s" x="1104" y="610" text-anchor="end" fill="#8FDCF0" font-family="system-ui, sans-serif" font-size="26" font-weight="800" letter-spacing="3" data-en="FUTURE">GELECEK</text>
     <text class="fade" style="--d:4.4s" x="1104" y="638" text-anchor="end" fill="#9fb0c9" font-family="system-ui, sans-serif" font-size="16" data-en="projection · forecast · decision">projeksiyon · tahmin · karar</text>
     <!-- the two faces: line drawing traced from the user's photo of a marble Janus bust;
          the elder (left, past) in white, the youth (right, future) in cyan to violet; it is revealed outwards from "today" -->
@@ -306,18 +307,18 @@
       <path class="draw" pathLength="1" style="--d:5.3s;--t:1s" d="M50 16 A44 44 0 0 0 50 104" stroke="#e6edf7" stroke-width="9"/>
       <path class="draw" pathLength="1" style="--d:5.45s;--t:1s" d="M70 16 A44 44 0 0 1 70 104" stroke="url(#ifut)" stroke-width="9"/>
       <path class="draw" pathLength="1" style="--d:5.7s;--t:.7s" d="M52 36 A26 26 0 0 0 52 84" stroke="#e6edf7" stroke-width="2.5" stroke-opacity=".4"/>
-      <path class="fade" style="--d:5.8s" d="M68 36 A26 26 0 0 1 68 84" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="3 5" stroke-opacity=".7"/>
+      <path class="fade" style="--d:5.8s" d="M68 36 A26 26 0 0 1 68 84" stroke="#35C7E8" stroke-width="2.5" stroke-dasharray="3 5" stroke-opacity=".7"/>
     </g>
     <text class="fade" style="--d:6.2s" x="600" y="508" text-anchor="middle" fill="#e6edf7" font-family="system-ui, sans-serif" font-size="46" font-weight="800" letter-spacing="2">Janus</text>
-    <text class="fade" style="--d:6.5s" x="600" y="544" text-anchor="middle" fill="#a9bad3" font-family="system-ui, sans-serif" font-size="20" data-en="Measure the past, manage the future.">Geçmişi ölç, geleceği yönet.</text>
+    <text class="fade" style="--d:6.5s" x="600" y="544" text-anchor="middle" fill="#a9bad3" font-family="system-ui, sans-serif" font-size="20" data-en="Measure the Past, Manage the Future">Geçmişi Ölç, Geleceği Yönet</text>
   </svg>
   <span class="skipnote" data-en="Click or scroll to skip">Geçmek için tıklayın veya kaydırın</span>
 </div>
 <a class="skip" href="#urun" id="skip" data-en="Skip the animation, go to content">Animasyonu atla, içeriğe geç</a>
 <header>
   <a class="brand" href="#" aria-label="Janus, sayfa başı" data-en-aria-label="Janus, top of page">
-    <svg width="30" height="30" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="fut" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><path d="M50 16A44 44 0 0 0 50 104" fill="none" stroke="#e6edf7" stroke-width="13" stroke-linecap="round"/><path d="M70 16A44 44 0 0 1 70 104" fill="none" stroke="url(#fut)" stroke-width="13" stroke-linecap="round"/><circle cx="60" cy="60" r="10" fill="#ecfeff"/></svg>
-    <span>Janus</span>
+    <svg width="30" height="30" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="fut" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35C7E8"/><stop offset="1" stop-color="#3478F6"/></linearGradient></defs><path d="M50 16A44 44 0 0 0 50 104" fill="none" stroke="#e6edf7" stroke-width="13" stroke-linecap="round"/><path d="M70 16A44 44 0 0 1 70 104" fill="none" stroke="url(#fut)" stroke-width="13" stroke-linecap="round"/><circle cx="60" cy="60" r="10" fill="#ecfeff"/></svg>
+    <span>JANUS</span>
   </a>
   <div class="lang" role="group" aria-label="Dil / Language">
     <button type="button" data-lang="tr" lang="tr" aria-label="Türkçe">TR</button><button type="button" data-lang="en" lang="en" aria-label="English">EN</button>
@@ -333,7 +334,7 @@
 <div class="captions" id="captions">
   <div class="cap hero-cap" data-scene="0" data-from="-1" data-to="0.3">
     <p class="eyebrow" data-en="Project control platform for construction">İnşaat için proje kontrol platformu</p>
-    <h1 data-en="Measure the past,&lt;br&gt;&lt;span class=&quot;grad&quot;&gt;manage the future.&lt;/span&gt;">Geçmişi ölç,<br><span class="grad">geleceği yönet.</span></h1>
+    <h1 data-en="Measure the Past,&lt;br&gt;&lt;span class=&quot;grad&quot;&gt;Manage the Future&lt;/span&gt;">Geçmişi Ölç,<br><span class="grad">Geleceği Yönet</span></h1>
     <p data-en="Janus brings the BOQ (bill of quantities), activities, budget and actual cost from your ERP into one control model. Everything that rises on site is a measured value in Janus.">Janus; BOQ'yu (metraj-keşif listesi), aktiviteleri, bütçeyi ve ERP'deki gerçekleşen maliyeti tek bir kontrol modelinde birleştirir. Sahada yükselen her şey, Janus'ta ölçülen bir değerdir.</p>
     <span class="hint" data-en="&lt;i&gt;&lt;/i&gt;The dam is being built; scroll to see the chart"><i></i>Baraj yapılıyor; grafiğe geçmek için kaydırın</span>
   </div>
@@ -379,7 +380,7 @@
   </div>
   <div class="cap" data-scene="2" data-from="0.7501" data-to="1.01">
     <p class="eyebrow" data-en="Tower · completed">Gökdelen · tamamlandı</p>
-    <h2 data-en="Measure the past, manage the future.">Geçmişi ölç, geleceği yönet.</h2>
+    <h2 data-en="Measure the Past, Manage the Future">Geçmişi Ölç, Geleceği Yönet</h2>
     <p data-en="The values in the scenes are a sample scenario. Let&#x27;s look at the real values of your projects together.">Sahnelerdeki değerler örnek senaryodur. Sizin projelerinizin gerçek değerlerini birlikte görelim.</p>
   </div>
 </div>
@@ -466,7 +467,7 @@
 
     <section class="sec">
       <div class="wrap why">
-        <svg class="reveal" width="150" height="150" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="wfut" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#7c3aed"/></linearGradient><filter id="wglow" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="4"/></filter></defs><circle cx="60" cy="60" r="48" fill="none" stroke="#e6edf7" stroke-width=".8" opacity=".18"/><path d="M50 16A44 44 0 0 0 50 104" fill="none" stroke="#e6edf7" stroke-width="9" stroke-linecap="round"/><path d="M70 16A44 44 0 0 1 70 104" fill="none" stroke="url(#wfut)" stroke-width="9" stroke-linecap="round"/><path d="M52 36A26 26 0 0 0 52 84" fill="none" stroke="#e6edf7" stroke-width="2.5" stroke-linecap="round" opacity=".4"/><path d="M68 36A26 26 0 0 1 68 84" fill="none" stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="3 5" opacity=".7"/><circle cx="60" cy="60" r="10" fill="#22d3ee" filter="url(#wglow)"/><circle cx="60" cy="60" r="5.5" fill="#ecfeff"/></svg>
+        <svg class="reveal" width="150" height="150" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="wfut" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35C7E8"/><stop offset="1" stop-color="#3478F6"/></linearGradient><filter id="wglow" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="4"/></filter></defs><circle cx="60" cy="60" r="48" fill="none" stroke="#e6edf7" stroke-width=".8" opacity=".18"/><path d="M50 16A44 44 0 0 0 50 104" fill="none" stroke="#e6edf7" stroke-width="9" stroke-linecap="round"/><path d="M70 16A44 44 0 0 1 70 104" fill="none" stroke="url(#wfut)" stroke-width="9" stroke-linecap="round"/><path d="M52 36A26 26 0 0 0 52 84" fill="none" stroke="#e6edf7" stroke-width="2.5" stroke-linecap="round" opacity=".4"/><path d="M68 36A26 26 0 0 1 68 84" fill="none" stroke="#35C7E8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="3 5" opacity=".7"/><circle cx="60" cy="60" r="10" fill="#35C7E8" filter="url(#wglow)"/><circle cx="60" cy="60" r="5.5" fill="#ecfeff"/></svg>
         <div>
           <p class="eyebrow reveal" data-en="Why Janus?">Neden Janus?</p>
           <blockquote class="reveal" data-en="Janus, the Roman god with one face looking to the past and one to the future, is the symbol of that unique vision. Being at the wheel of project control takes exactly this dynamism: one eye on completed quantities, effort spent and data; the other on the risks ahead and the big goal! In a project that measures the past without interruption and reads tomorrow from today, there is no room for uncertainty.">Roma tanrısı Janus, bir yüzü geçmişe bir yüzü geleceğe bakan o eşsiz vizyonun simgesidir. Proje kontrolünün direksiyonunda olmak da tam olarak bu dinamizmi gerektirir: Bir gözünüz tamamlanan metrajlarda, harcanan emekte ve veride; diğer gözünüz ise rotadaki risklerde ve büyük hedefte! Geçmişi kesintisiz ölçen ve yarını bugünden okuyan bir projede, belirsizliklere yer kalmaz.</blockquote>
@@ -487,7 +488,7 @@
       <div class="wrap foot">
         <div class="foot-brand">
           <svg width="34" height="34" viewBox="0 0 120 120" aria-hidden="true"><path d="M50 16A44 44 0 0 0 50 104" fill="none" stroke="#e6edf7" stroke-width="13" stroke-linecap="round"/><path d="M70 16A44 44 0 0 1 70 104" fill="none" stroke="url(#fut)" stroke-width="13" stroke-linecap="round"/><circle cx="60" cy="60" r="10" fill="#ecfeff"/></svg>
-          <div><b>Janus</b><span data-en="Project control platform for construction">İnşaat için proje kontrol platformu</span></div>
+          <div><b>JANUS</b><span data-en="Project control platform for construction">İnşaat için proje kontrol platformu</span></div>
         </div>
         <div class="foot-contact">
           <span class="foot-label" data-en="Contact">İletişim</span>
@@ -504,8 +505,8 @@
 // data-en-<attribute> (alt, aria-label, href, data-alt); the Turkish original is kept in data-tr.
 (() => {
   const META = {
-    tr: { title: 'Janus — Geçmişi ölç, geleceği yönet', desc: "Janus, inşaat projeleri için BOQ (metraj-keşif) merkezli, yapay zekâ destekli proje kontrol platformudur. Sahada yükselen her şey, Janus'ta ölçülen bir değerdir." },
-    en: { title: 'Janus — Measure the past, manage the future', desc: 'Janus is a BOQ-centred, AI-assisted project control platform for construction. Everything that rises on site is a measured value in Janus.' },
+    tr: { title: 'JANUS — Geçmişi Ölç, Geleceği Yönet', desc: "Janus, inşaat projeleri için BOQ (metraj-keşif) merkezli, yapay zekâ destekli proje kontrol platformudur. Sahada yükselen her şey, Janus'ta ölçülen bir değerdir." },
+    en: { title: 'JANUS — Measure the Past, Manage the Future', desc: 'Janus is a BOQ-centred, AI-assisted project control platform for construction. Everything that rises on site is a measured value in Janus.' },
   };
   function apply(lang) {
     window.__lang = lang;

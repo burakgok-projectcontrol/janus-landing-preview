@@ -32,7 +32,7 @@ function base(ctx, kind) {
   for (let i = 0; i < 4; i++) { const y = 56 + ((H - 112) * (i + 0.5)) / 4 + 8; ctx.fillText('ABCD'[i], 48, y); ctx.fillText('ABCD'[i], W - 48, y); }
   // Title block.
   const tw = 640, th = 200, tx = W - 56 - tw, ty = H - 56 - th;
-  ctx.fillStyle = 'rgba(10, 31, 68, 0.6)';
+  ctx.fillStyle = 'rgba(7, 17, 31, 0.6)';
   ctx.fillRect(tx, ty, tw, th);
   ctx.strokeStyle = INK(0.7);
   ctx.lineWidth = 2;
@@ -271,7 +271,7 @@ export function createBackdrop(kind) {
     last = width;
     W = canvas.width = width;
     canvas.height = H;
-    ctx.fillStyle = '#0a1f44';
+    ctx.fillStyle = '#07111F';
     ctx.fillRect(0, 0, W, H);
     base(ctx, BACKDROP[kind]);
     texture.needsUpdate = true;
