@@ -182,20 +182,33 @@
   .reveal.in { opacity: 1; transform: none; }
   @media (prefers-reduced-motion: reduce) { .after::before { animation: none; } .reveal { opacity: 1; transform: none; } .glow { transition: none; } }
 
-  .feat { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 40px; align-items: start; }
-  .feat .grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
-  .feat .card { padding: 18px; }
-  .feat .card h3 { font-size: 1.02rem; }
-  .feat .card p { font-size: .9rem; }
-  .monitor-wrap { position: sticky; top: 110px; perspective: 1400px; }
-  .monitor { position: relative; border-radius: 4px; border: 1px solid rgba(53, 199, 232, .45); background: #111C2B; padding: 10px 10px 12px;
-    transform: rotateY(-14deg) rotateX(6deg); transform-style: preserve-3d; transition: transform .5s ease; box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .7), 0 0 60px -10px rgba(53, 199, 232, .35); }
-  .monitor .dots { display: flex; gap: 6px; padding: 2px 4px 10px; }
-  .monitor .dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(165, 214, 255, .35); }
-  .monitor .screen { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 3px; background: #fff; }
-  .monitor .screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top left; opacity: 0; transform: translateZ(0) scale(1.04); transition: opacity .55s ease, transform .9s ease; }
-  .monitor .screen img.on { opacity: 1; transform: scale(1); }
-  .monitor .scan { display: none; } /* decorative scan line removed */
+  /* Product screens: tabs switch one large, flat screenshot; a click opens it at full size. */
+  .show { margin-bottom: 40px; }
+  .show-tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
+  .show-tabs button { all: unset; cursor: pointer; padding: 12px 13px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 600; font-size: .9rem; transition: color .2s, border-color .2s; }
+  .show-tabs button:hover { color: var(--text); }
+  .show-tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--cyan); }
+  .show-tabs button:focus-visible { outline: 3px solid var(--cyan); outline-offset: -3px; }
+  .show-text { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.6fr); gap: 8px 32px; align-items: baseline; margin-bottom: 18px; min-height: 3.4em; }
+  .show-text h3 { margin: 0; font-size: 1.3rem; }
+  .show-text p { margin: 0; color: var(--muted); }
+  .show-img { all: unset; display: block; box-sizing: border-box; width: 100%; cursor: zoom-in; border: 1px solid rgba(53, 199, 232, .45); border-radius: 4px; overflow: hidden; background: #fff; box-shadow: 0 30px 70px -34px rgba(0, 0, 0, .8); }
+  .show-img:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+  .show-img img { display: block; width: 100%; height: auto; transition: opacity .3s ease, transform .6s ease; }
+  .show-img img.swap { opacity: 0; transform: scale(1.015); }
+  .show-cap { margin: 12px 0 0; color: var(--muted); font-size: .86rem; }
+  .show-cap b { color: var(--text); }
+  #shotDlg { padding: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--text); max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow: auto; }
+  #shotDlg::backdrop { background: rgba(7, 17, 31, .88); }
+  #shotDlg img { display: block; width: min(1600px, calc(100vw - 48px)); height: auto; }
+  #shotDlg .dlg-close { position: sticky; top: 8px; left: 100%; float: right; margin: 8px; z-index: 1; }
+  @media (max-width: 860px) {
+    .show-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+    .show-tabs button { white-space: nowrap; padding: 10px 12px; font-size: .9rem; }
+    .show-text { grid-template-columns: 1fr; }
+    #shotDlg img { width: 1200px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .show-img img { transition: none; } }
   /* ERP – JANUS – planning: two lines draw into JANUS when the block comes into view. */
   .flow { display: grid; grid-template-columns: 1fr minmax(40px, 120px) 1.2fr minmax(40px, 120px) 1fr; align-items: center; margin: 0 0 48px; max-width: 980px; }
   .flow .node { border: 1px solid var(--line); background: var(--card); border-radius: 3px; padding: 16px 18px; }
@@ -217,18 +230,6 @@
     .flow.in .wire { transform: scaleY(1); }
   }
   @media (prefers-reduced-motion: reduce) { .flow .wire { transform: none !important; transition: none; } }
-  .monitor-cap { margin-top: 16px; color: var(--muted); font-size: .88rem; min-height: 2.6em; }
-  .monitor-cap b { color: var(--text); }
-  .monitor.tilt-flat { transform: rotateY(0) rotateX(0); }
-  @media (prefers-reduced-motion: reduce) { .monitor, .monitor .scan { animation: none; } }
-  .ai-shot { perspective: 1400px; }
-  .ai-shot .monitor { transform: rotateY(12deg) rotateX(5deg); }
-  @media (max-width: 860px) {
-    .feat { grid-template-columns: 1fr; }
-    .monitor-wrap { position: relative; top: 0; order: -1; }
-    .monitor, .ai-shot .monitor { transform: rotateX(4deg); }
-    .feat .grid { grid-template-columns: 1fr; }
-  }
 
   /* Opening: Janus drawn as a blueprint — past (left, solid), today (centre), future (right, projected). */
   #intro { position: fixed; inset: 0; z-index: 40; background: #0a1f44; display: grid; place-items: center; overflow: hidden; transition: opacity .8s ease; cursor: pointer; }
@@ -488,30 +489,30 @@
           <i class="wire rev" aria-hidden="true"></i>
           <div class="node"><b data-en="Planning">Planlama</b><span data-en="Activities and schedule">Aktiviteler ve takvim</span></div>
         </div>
-        <div class="feat">
-          <div class="grid" id="featCards">
-          <article class="card glow pick reveal" tabindex="0" style="--d:0.00s" data-shot="mapping" data-alt="BOQ eşleme ekranı" data-en-data-alt="BOQ mapping screen"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h7M4 12h4M4 17h7M15 7h5M15 17h5M11 7l4 5-4 5M8 12h7" /></svg></span><h3 data-en="BOQ ↔ activity mapping">BOQ ↔ aktivite eşleme</h3><p data-en="Each BOQ item is linked to one or more activities with weights; unmapped and double-counted amounts are reported separately.">Her BOQ kalemi bir veya birkaç aktiviteye ağırlıkla bağlanır; eşlenmemiş ve çift sayılan tutarlar ayrıca raporlanır.</p></article>
-          <article class="card glow pick reveal" tabindex="0" style="--d:0.06s" data-shot="ai-plan" data-alt="AI kontrol planı ekranı" data-en-data-alt="AI control plan screen"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z" /></svg></span><h3 data-en="AI-assisted control plan">AI destekli kontrol planı</h3><p data-en="Proposes a WBS (work breakdown structure), activities and a CBS (cost breakdown structure) from the BOQ; nothing goes live until you approve it.">BOQ'dan iş kırılımı (WBS), aktivite ve CBS (maliyet kırılım yapısı) önerisi; siz onaylamadan hiçbir şey canlıya geçmez.</p></article>
-          <article class="card glow pick reveal" tabindex="0" style="--d:0.12s" data-shot="budget" data-alt="Bütçe ve poz analizi ekranı" data-en-data-alt="Budget and item analysis screen"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg></span><h3 data-en="Budget, baseline, time phasing">Bütçe, baseline, zamana yayma</h3><p data-en="Budget and revenue are spread over activity durations; the baseline (approved reference plan) is frozen and variance is always measured against it.">Bütçe ve gelir aktivite süresine yayılır; baseline (onaylı referans plan) donar, sapma hep ona göre ölçülür.</p></article>
-          <article class="card glow pick reveal" tabindex="0" style="--d:0.18s" data-shot="actuals" data-alt="Gerçekleşen maliyet ekranı" data-en-data-alt="Actual cost screen"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h12M19 15l3 3-3 3" /></svg></span><h3 data-en="ERP cost attribution">ERP maliyetinin atfı</h3><p data-en="Actual cost is linked to activities and BOQ items; timesheets and allocation keys bring indirect costs down to activities.">Gerçekleşen maliyet aktiviteye ve BOQ'ya bağlanır; puantaj ve dağıtım anahtarlarıyla endirekt giderler aktivitelere iner.</p></article>
-          <article class="card glow pick reveal" tabindex="0" style="--d:0.24s" data-shot="evm" data-alt="Performans (EVM) ekranı" data-en-data-alt="Performance (EVM) screen"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20c5 0 7-14 18-16M3 20h18M14 10l3 3 4-6" /></svg></span><h3 data-en="Earned value and alerts">Kazanılmış değer ve uyarılar</h3><p data-en="CPI, SPI, Earned Schedule and EAC; when a threshold is crossed, a rule-based alert with its location and a suggested action.">CPI, SPI, Earned Schedule ve EAC; eşik aşıldığında kural tabanlı uyarı, yeri ve önerilen aksiyonla.</p></article>
-          <article class="card glow pick reveal" tabindex="0" style="--d:0.30s" data-shot="dashboard" data-alt="Proje dashboard ekranı" data-en-data-alt="Project dashboard screen"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z" /></svg></span><h3 data-en="Dashboard and reports">Dashboard ve raporlar</h3><p data-en="S-curve and indicators, the AI report assistant and the approved period report, with PDF export.">S-eğrisi ve göstergeler, AI rapor asistanı ve onaylı dönem raporu; PDF çıktısıyla.</p></article>
+        <div class="show reveal">
+          <div class="show-tabs" role="tablist" aria-label="Janus ekranları" data-en-aria-label="Janus screens">
+            <button type="button" role="tab" id="tab-mapping" aria-controls="showPanel" aria-selected="true" tabindex="0" data-shot="mapping" data-en="BOQ ↔ activity mapping">BOQ ↔ aktivite eşleme</button>
+            <button type="button" role="tab" id="tab-ai-plan" aria-controls="showPanel" aria-selected="false" tabindex="-1" data-shot="ai-plan" data-en="AI-assisted control plan">AI destekli kontrol planı</button>
+            <button type="button" role="tab" id="tab-budget" aria-controls="showPanel" aria-selected="false" tabindex="-1" data-shot="budget" data-en="Budget, baseline, time phasing">Bütçe, baseline, zamana yayma</button>
+            <button type="button" role="tab" id="tab-actuals" aria-controls="showPanel" aria-selected="false" tabindex="-1" data-shot="actuals" data-en="ERP cost attribution">ERP maliyetinin atfı</button>
+            <button type="button" role="tab" id="tab-evm" aria-controls="showPanel" aria-selected="false" tabindex="-1" data-shot="evm" data-en="Earned value and alerts">Kazanılmış değer ve uyarılar</button>
+            <button type="button" role="tab" id="tab-dashboard" aria-controls="showPanel" aria-selected="false" tabindex="-1" data-shot="dashboard" data-en="Dashboard and reports">Dashboard ve raporlar</button>
           </div>
-          <div class="monitor-wrap reveal">
-            <div class="monitor" id="monitor">
-              <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
-              <div class="screen">
-              <img src="assets/screens/mapping.webp" alt="Janus BOQ eşleme ekranı (örnek proje verisi)" data-en-alt="Janus BOQ mapping screen (sample project data)" loading="lazy" width="1200" height="750" data-shot="mapping" class="on">
-              <img src="assets/screens/ai-plan.webp" alt="Janus AI kontrol planı ekranı (örnek proje verisi)" data-en-alt="Janus AI control plan screen (sample project data)" loading="lazy" width="1200" height="750" data-shot="ai-plan">
-              <img src="assets/screens/budget.webp" alt="Janus Bütçe ve poz analizi ekranı (örnek proje verisi)" data-en-alt="Janus budget and item analysis screen (sample project data)" loading="lazy" width="1200" height="750" data-shot="budget">
-              <img src="assets/screens/actuals.webp" alt="Janus Gerçekleşen maliyet ekranı (örnek proje verisi)" data-en-alt="Janus actual cost screen (sample project data)" loading="lazy" width="1200" height="750" data-shot="actuals">
-              <img src="assets/screens/evm.webp" alt="Janus Performans (EVM) ekranı (örnek proje verisi)" data-en-alt="Janus performance (EVM) screen (sample project data)" loading="lazy" width="1200" height="750" data-shot="evm">
-              <img src="assets/screens/dashboard.webp" alt="Janus Proje dashboard ekranı (örnek proje verisi)" data-en-alt="Janus project dashboard screen (sample project data)" loading="lazy" width="1200" height="750" data-shot="dashboard">
-                <span class="scan" aria-hidden="true"></span>
-              </div>
-            </div>
-            <p class="monitor-cap" id="monitorCap" aria-live="polite"></p>
+          <div class="show-panel" id="showPanel" role="tabpanel" aria-labelledby="tab-mapping">
+            <div class="show-text"><h3 id="showTitle"></h3><p id="showDesc"></p></div>
+            <button class="show-img" type="button" id="showZoom" aria-label="Ekranı tam boyutta aç" data-en-aria-label="Open the screen at full size">
+              <img id="showImg" src="assets/screens/tr/mapping.webp" srcset="assets/screens/tr/mapping-sm.webp 800w, assets/screens/tr/mapping.webp 1600w" sizes="(max-width: 1152px) calc(100vw - 32px), 1120px" width="1600" height="1000" loading="lazy" decoding="async" alt="">
+            </button>
+            <p class="show-cap" data-en="Sample project data: Port of İzmir Expansion (sample). Click the screen to open it at full size.">Örnek proje verisi: İzmir Limanı Genişletme (örnek). Tam boyut için ekrana tıklayın.</p>
           </div>
+        </div>
+        <div hidden id="showData">
+          <p data-shot="mapping" data-en="Each BOQ item is linked to one or more activities with weights; unmapped and double-counted amounts are reported separately.">Her BOQ kalemi bir veya birkaç aktiviteye ağırlıkla bağlanır; eşlenmemiş ve çift sayılan tutarlar ayrıca raporlanır.</p>
+          <p data-shot="ai-plan" data-en="Proposes a WBS (work breakdown structure), activities and a CBS (cost breakdown structure) from the BOQ; nothing goes live until you approve it.">BOQ'dan iş kırılımı (WBS), aktivite ve CBS (maliyet kırılım yapısı) önerisi; siz onaylamadan hiçbir şey canlıya geçmez.</p>
+          <p data-shot="budget" data-en="Budget and revenue are spread over activity durations; the baseline (approved reference plan) is frozen and variance is always measured against it.">Bütçe ve gelir aktivite süresine yayılır; baseline (onaylı referans plan) donar, sapma hep ona göre ölçülür.</p>
+          <p data-shot="actuals" data-en="Actual cost is linked to activities and BOQ items; timesheets and allocation keys bring indirect costs down to activities.">Gerçekleşen maliyet aktiviteye ve BOQ'ya bağlanır; puantaj ve dağıtım anahtarlarıyla endirekt giderler aktivitelere iner.</p>
+          <p data-shot="evm" data-en="CPI, SPI, Earned Schedule and EAC; when a threshold is crossed, a rule-based alert with its location and a suggested action.">CPI, SPI, Earned Schedule ve EAC; eşik aşıldığında kural tabanlı uyarı, yeri ve önerilen aksiyonla.</p>
+          <p data-shot="dashboard" data-en="S-curve and indicators, the AI report assistant and the approved period report, with PDF export.">S-eğrisi ve göstergeler, AI rapor asistanı ve onaylı dönem raporu; PDF çıktısıyla.</p>
         </div>
         <ul class="chips reveal">
           <li data-en="Subcontractor management">Taşeron yönetimi</li><li data-en="Granular permissions">Granüler yetki</li><li data-en="Guided tours">Rehberli turlar</li><li data-en="Turkish / English">Türkçe / İngilizce</li><li data-en="Local currency + USD">Yerel para + USD</li><li data-en="Excel import/export">Excel içe/dışa aktarma</li>
@@ -523,7 +524,7 @@
       <div class="wrap two">
         <div>
           <p class="eyebrow reveal" data-en="The role of AI">Yapay zekânın rolü</p>
-          <h2 class="big reveal" data-en="The server calculates, AI interprets.">Rakamı sunucu hesaplar, AI yorumlar.</h2>
+          <h2 class="big reveal" data-en="The system calculates, AI interprets.">Rakamı sistem hesaplar, AI yorumlar.</h2>
           <p class="sub reveal" data-en="Every number, such as cost, progress, CPI and SPI, is calculated on the server. AI interprets these results and produces suggestions and drafts.">Maliyet, ilerleme, CPI ve SPI gibi tüm sayılar sunucuda hesaplanır. Yapay zekâ bu sonuçları yorumlar, öneri ve taslak üretir.</p>
           <ul class="ticks">
             <li class="glow reveal" style="--d:.05s" data-en="&lt;b&gt;Draft first, then approval.&lt;/b&gt; AI suggestions go to a staging area; only what you accept is applied."><b>Önce taslak, sonra onay.</b> AI önerileri bekleme alanına yazılır; kabul ettikleriniz uygulanır.</li>
@@ -532,11 +533,10 @@
           </ul>
         </div>
         <div class="ai-shot reveal">
-          <div class="monitor">
-            <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
-            <div class="screen"><img class="on" src="assets/screens/assistant.webp" alt="Janus AI rapor asistanı ekranı (örnek proje verisi)" data-en-alt="Janus AI report assistant screen (sample project data)" loading="lazy" width="1200" height="750"><span class="scan" aria-hidden="true"></span></div>
-          </div>
-          <p class="monitor-cap" data-en="&lt;b&gt;AI report assistant&lt;/b&gt; · ready-made reports and free questions, answered as a chart or table."><b>AI rapor asistanı</b> · hazır raporlar ve serbest soru; grafik veya tablo olarak.</p>
+          <button class="show-img" type="button" data-zoom="period-report" aria-label="Ekranı tam boyutta aç" data-en-aria-label="Open the screen at full size">
+            <img data-langsrc="period-report" src="assets/screens/tr/period-report.webp" srcset="assets/screens/tr/period-report-sm.webp 800w, assets/screens/tr/period-report.webp 1600w" sizes="(max-width: 860px) calc(100vw - 32px), 560px" width="1600" height="1000" loading="lazy" decoding="async" alt="Janus dönem raporu ekranı (örnek proje verisi)" data-en-alt="Janus period report screen (sample project data)">
+          </button>
+          <p class="show-cap" data-en="&lt;b&gt;Period report&lt;/b&gt; · the system fills in every figure, AI writes the commentary; the approved report is frozen as the month&#x27;s record. (The sample report is written in Turkish.)"><b>Dönem raporu</b> · rakamları sistem doldurur, yorumu AI yazar; onaylanan rapor ayın kaydı olarak dondurulur.</p>
         </div>
       </div>
     </section>
@@ -631,6 +631,10 @@
     </footer>
   </div>
 </main>
+<dialog id="shotDlg" aria-label="Ekran, tam boyut" data-en-aria-label="Screen, full size">
+  <button class="btn btn-sm dlg-close" type="button" data-en="Close">Kapat</button>
+  <img alt="">
+</dialog>
 
 <script>
 // Language switch: every translatable element carries its English text in data-en (inner HTML) and
@@ -875,38 +879,6 @@
     el.style.setProperty('--mx', `${e.clientX - r.left}px`);
     el.style.setProperty('--my', `${e.clientY - r.top}px`);
   }));
-  const cards = [...document.querySelectorAll('#featCards .card')];
-  const imgs = [...document.querySelectorAll('#monitor img')];
-  const cap = document.getElementById('monitorCap');
-  const monitor = document.getElementById('monitor');
-  let active = 0, hold = false;
-  function show(i) {
-    if (i == null) i = active;
-    active = i;
-    cards.forEach((c, k) => c.classList.toggle('on', k === i));
-    imgs.forEach(im => im.classList.toggle('on', im.dataset.shot === cards[i].dataset.shot));
-    cap.innerHTML = `<b>${cards[i].querySelector('h3').textContent}</b> · ${cards[i].dataset.alt}, ${window.__lang === 'en' ? 'sample project data' : 'örnek proje verisi'}`;
-  }
-  cards.forEach((c, i) => {
-    c.addEventListener('pointerenter', () => { hold = true; show(i); });
-    c.addEventListener('pointerleave', () => { hold = false; });
-    c.addEventListener('focus', () => { hold = true; show(i); });
-    c.addEventListener('blur', () => { hold = false; });
-    c.addEventListener('click', () => show(i));
-  });
-  // The screen leans towards the cursor.
-  const wrap = monitor.parentElement;
-  wrap.addEventListener('pointermove', e => {
-    if (reduced) return;
-    const r = wrap.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
-    monitor.style.transform = `rotateY(${-14 + x * 16}deg) rotateX(${6 - y * 10}deg)`;
-  });
-  wrap.addEventListener('pointerleave', () => { monitor.style.transform = ''; });
-  show(0);
-  window.__showFeature = show; // re-render the caption after a language change
-  // Cycle through the features while nobody is pointing at them.
-  if (!reduced) setInterval(() => { if (!hold && document.documentElement.classList.contains('story') === false) show((active + 1) % cards.length); }, 4200);
 })();
 </script>
 
@@ -946,6 +918,54 @@
   addEventListener('wheel', e => { if (window.__intro) skip(e); }, { passive: false });
   addEventListener('touchend', () => { if (window.__intro) finish(); }, { passive: true });
   addEventListener('keydown', e => { if (window.__intro && e.key !== 'Tab') finish(); });
+})();
+</script>
+<script>
+// Product screens: tabs (arrow keys, Home/End), language-specific screenshots, full-size view in a dialog.
+(() => {
+  const tabs = [...document.querySelectorAll('.show-tabs [role="tab"]')];
+  if (!tabs.length) return;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const img = document.getElementById('showImg'), title = document.getElementById('showTitle'), desc = document.getElementById('showDesc');
+  const panel = document.getElementById('showPanel'), dlg = document.getElementById('shotDlg'), dlgImg = dlg.querySelector('img');
+  const lang = () => (window.__lang === 'en' ? 'en' : 'tr');
+  const files = shot => ({ src: `assets/screens/${lang()}/${shot}.webp`, srcset: `assets/screens/${lang()}/${shot}-sm.webp 800w, assets/screens/${lang()}/${shot}.webp 1600w` });
+  let active = 0;
+  function show(i, focus) {
+    active = i;
+    tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
+    const t = tabs[i], f = files(t.dataset.shot);
+    panel.setAttribute('aria-labelledby', t.id);
+    title.innerHTML = t.innerHTML;
+    desc.innerHTML = document.querySelector(`#showData [data-shot="${t.dataset.shot}"]`).innerHTML;
+    const alt = `${t.textContent}: ${lang() === 'en' ? 'Janus screen, sample project data' : 'Janus ekranı, örnek proje verisi'}`;
+    if (img.getAttribute('src') === f.src) { img.alt = alt; }
+    else {
+      if (!reduced) img.classList.add('swap');
+      const pre = new Image(); pre.sizes = img.sizes; pre.srcset = f.srcset; pre.src = f.src;
+      const apply = () => { img.srcset = f.srcset; img.src = f.src; img.alt = alt; requestAnimationFrame(() => img.classList.remove('swap')); };
+      (pre.decode ? pre.decode() : Promise.resolve()).then(apply, apply);
+    }
+    if (focus) t.focus();
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => show(i));
+    t.addEventListener('keydown', e => {
+      const n = tabs.length, to = { ArrowRight: (i + 1) % n, ArrowLeft: (i - 1 + n) % n, Home: 0, End: n - 1 }[e.key];
+      if (to !== undefined) { e.preventDefault(); show(to, true); }
+    });
+  });
+  function open(shot, alt) { dlgImg.src = files(shot).src; dlgImg.alt = alt; dlg.showModal(); }
+  document.getElementById('showZoom').addEventListener('click', () => open(tabs[active].dataset.shot, img.alt));
+  document.querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => open(b.dataset.zoom, b.querySelector('img').alt)));
+  dlg.querySelector('.dlg-close').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  // Language change: re-render the tab and swap the other language-specific screenshots.
+  window.__showFeature = () => {
+    show(active);
+    document.querySelectorAll('img[data-langsrc]').forEach(im => { const f = files(im.dataset.langsrc); im.srcset = f.srcset; im.src = f.src; });
+  };
+  window.__showFeature();
 })();
 </script>
 <script>
