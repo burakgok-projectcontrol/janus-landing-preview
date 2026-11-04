@@ -308,6 +308,10 @@
   .demo-form [aria-invalid="true"] { border-color: #f87171; }
   .demo-form .f-err { margin: 0; min-height: 0; color: #fca5a5; font-size: .84rem; }
   .demo-form .f-err:empty { display: none; }
+  .demo-form .f-check { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: start; }
+  .demo-form .f-check input { width: 20px; height: 20px; margin: 2px 0 0; padding: 0; accent-color: var(--blue); }
+  .demo-form .f-check label { font-weight: 400; color: var(--muted); line-height: 1.5; }
+  .demo-form .f-check .f-err { grid-column: 2; }
   .demo-form .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
   .demo-form .btn { border: 0; font: inherit; font-weight: 600; cursor: pointer; width: 100%; }
   .demo-form .btn:disabled { opacity: .6; cursor: progress; }
@@ -578,7 +582,7 @@
         <div class="demo-copy">
           <p class="eyebrow" data-en="Personal demo">Kişisel demo</p>
           <h2 class="big" data-en="Let&#x27;s look at your projects together.">Projelerinizde birlikte bakalım.</h2>
-          <p class="sub" data-en="We will show Janus with the structure of your own project data. A short note on your company, role and project type is enough.">Janus'u kendi proje verinizin yapısına göre gösterelim. Şirketiniz, rolünüz ve proje türünüz kısaca yeterli.</p>
+          <p class="sub" data-en="We will show Janus with the structure of your own project data. Your name, company and job title are enough; add a short note if you like.">Janus'u kendi proje verinizin yapısına göre gösterelim. Adınız, şirketiniz ve unvanınız yeterli; isterseniz kısa bir not ekleyin.</p>
           <p class="cta-mail" data-en="or write to us directly: &lt;a href=&quot;mailto:diprojectcontrol@gmail.com&quot;&gt;diprojectcontrol@gmail.com&lt;/a&gt;">veya doğrudan yazın: <a href="mailto:diprojectcontrol@gmail.com">diprojectcontrol@gmail.com</a></p>
         </div>
         <form class="demo-form" id="demoForm" novalidate>
@@ -593,35 +597,33 @@
             <p class="f-err" id="df-company-e"></p>
           </div>
           <div class="f">
-            <label for="df-role" data-en="Your role">Rolünüz</label>
-            <input id="df-role" name="role" type="text" autocomplete="organization-title" maxlength="120" data-en-placeholder="e.g. Planning manager" placeholder="örn. Planlama müdürü">
-          </div>
-          <div class="f">
             <label for="df-email"><span data-en="Email">E-posta</span> <b aria-hidden="true">*</b></label>
             <input id="df-email" name="email" type="email" autocomplete="email" maxlength="160" required aria-describedby="df-email-e">
             <p class="f-err" id="df-email-e"></p>
           </div>
+          <div class="f">
+            <label for="df-phone" data-en="Phone">Telefon</label>
+            <input id="df-phone" name="phone" type="tel" autocomplete="tel" maxlength="30" inputmode="tel">
+          </div>
           <div class="f wide">
-            <label for="df-type" data-en="Project type">Proje türü</label>
-            <select id="df-type" name="type">
-              <option value="" data-en="Select">Seçiniz</option>
-              <option value="Baraj" data-en="Dam">Baraj</option>
-              <option value="Havalimanı" data-en="Airport">Havalimanı</option>
-              <option value="Bina / kule" data-en="Building / tower">Bina / kule</option>
-              <option value="Altyapı" data-en="Infrastructure">Altyapı</option>
-              <option value="Diğer" data-en="Other">Diğer</option>
-            </select>
+            <label for="df-role" data-en="Job title">Unvan</label>
+            <input id="df-role" name="role" type="text" autocomplete="organization-title" maxlength="120" data-en-placeholder="e.g. Planning manager" placeholder="örn. Planlama müdürü">
           </div>
           <div class="f wide">
             <label for="df-msg" data-en="Message">Mesaj</label>
             <textarea id="df-msg" name="message" rows="4" maxlength="1500"></textarea>
+          </div>
+          <div class="f wide f-check">
+            <input id="df-kvkk" name="kvkk" type="checkbox" required aria-describedby="df-kvkk-e">
+            <label for="df-kvkk"><span data-en="I agree that my personal data is processed to respond to my demo request.">Kişisel verilerimin demo talebime dönüş yapılması amacıyla işlenmesini kabul ediyorum.</span> <b aria-hidden="true">*</b></label>
+            <p class="f-err" id="df-kvkk-e"></p>
           </div>
           <div class="f hp" aria-hidden="true"><label>Website <input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>
           <div class="f wide">
             <button class="btn" type="submit" id="df-send" data-en="Request a Personal Demo">Kişisel Demo Talep Et</button>
           </div>
           <p class="f-status wide" id="df-status" role="status" aria-live="polite"></p>
-          <p class="f-note wide" data-en="* Required. Your details are used only to get back to your demo request.">* Zorunlu alan. Bilgileriniz yalnızca demo talebinize dönmek için kullanılır.</p>
+          <p class="f-note wide" data-en="* Required.">* Zorunlu alan.</p>
         </form>
       </div>
     </section>
@@ -983,7 +985,7 @@
 // (setup: docs/demo-form/KURULUM.md). While it is empty the form opens a prefilled email draft instead; the page never
 // claims "sent" unless the server confirmed it.
 (() => {
-  const DEMO_ENDPOINT = '';
+  const DEMO_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzt1Pe2YUooXqqCVCJpjWHZOkV-yXtmm8yv-XXYl_2Um0q1gq_z_JvE3n4IdXHsc9N2/exec';
   const MAIL = 'diprojectcontrol@gmail.com';
   const form = document.getElementById('demoForm');
   if (!form) return;
@@ -998,6 +1000,7 @@
       ['df-name', el => el.value.trim() === '', L('Lütfen adınızı yazın.', 'Please enter your name.')],
       ['df-company', el => el.value.trim() === '', L('Lütfen şirket adını yazın.', 'Please enter your company.')],
       ['df-email', el => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value.trim()), L('Geçerli bir e-posta adresi yazın.', 'Please enter a valid email address.')],
+      ['df-kvkk', el => !el.checked, L('Devam etmek için onay kutusunu işaretleyin.', 'Please tick the consent box to continue.')],
     ];
     for (const [id, bad, msg] of rules) {
       const el = document.getElementById(id), err = document.getElementById(id + '-e');
@@ -1009,6 +1012,7 @@
     if (first) first.focus();
     return !first;
   }
+  form.addEventListener('change', e => { if (e.target.id === 'df-kvkk' && e.target.checked) { e.target.setAttribute('aria-invalid', 'false'); document.getElementById('df-kvkk-e').textContent = ''; } });
   form.addEventListener('input', e => {
     if (e.target.getAttribute('aria-invalid') === 'true') { e.target.setAttribute('aria-invalid', 'false'); const err = document.getElementById(e.target.id + '-e'); if (err) err.textContent = ''; }
   });
@@ -1018,10 +1022,12 @@
     say('');
     if (!check()) return;
     const d = Object.fromEntries(new FormData(form));
+    d.kvkk = document.getElementById('df-kvkk').checked;
+    d.source = `janus-landing-${window.__lang === 'en' ? 'en' : 'tr'}`;
     if (d.website) { say(L('Teşekkürler.', 'Thank you.'), 'ok'); return; } // hidden field filled: a bot; pretend, send nothing
     if (!DEMO_ENDPOINT) {
-      const lines = [`${L('Ad soyad', 'Name')}: ${d.name}`, `${L('Şirket', 'Company')}: ${d.company}`, `${L('Rol', 'Role')}: ${d.role || '-'}`,
-        `${L('E-posta', 'Email')}: ${d.email}`, `${L('Proje türü', 'Project type')}: ${d.type || '-'}`, '', d.message || ''];
+      const lines = [`${L('Ad soyad', 'Name')}: ${d.name}`, `${L('Şirket', 'Company')}: ${d.company}`, `${L('Unvan', 'Job title')}: ${d.role || '-'}`,
+        `${L('E-posta', 'Email')}: ${d.email}`, `${L('Telefon', 'Phone')}: ${d.phone || '-'}`, `${L('KVKK onayı', 'Consent')}: ${L('verildi', 'given')}`, '', d.message || ''];
       location.href = `mailto:${MAIL}?subject=${encodeURIComponent(L('Janus demo talebi', 'Janus demo request'))}&body=${encodeURIComponent(lines.join('\n'))}`;
       say(L('E-posta taslağınız açıldı. Göndermeyi e-posta uygulamanızdan tamamlayın; aksi halde şuraya yazın: ', 'Your email draft has opened. Finish sending it in your email app; otherwise write to ') + mailLink, '');
       return;
@@ -1030,7 +1036,7 @@
     say(L('Gönderiliyor…', 'Sending…'));
     const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 15000);
     try {
-      const r = await fetch(DEMO_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...d, lang: window.__lang }), signal: ctrl.signal });
+      const r = await fetch(DEMO_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(d), signal: ctrl.signal });
       const j = await r.json();
       if (!j.ok) throw new Error('rejected');
       form.reset();
