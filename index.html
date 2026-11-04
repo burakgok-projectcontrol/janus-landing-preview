@@ -245,6 +245,30 @@
   .foot-small { grid-column: 1 / -1; margin: 0; padding-top: 18px; border-top: 1px solid var(--line); font-size: .78rem; }
   .cta-mail { margin: 18px 0 0; color: var(--muted); font-size: .95rem; }
   .cta-mail a { color: var(--text); }
+  .cta .demo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 56px; align-items: start; text-align: left; }
+  .demo .sub { margin-inline: 0; }
+  #iletisim { scroll-margin-top: 56px; }
+  .demo-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 26px; }
+  .demo-form .wide { grid-column: 1 / -1; }
+  .demo-form .f { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .demo-form label { font-size: .86rem; font-weight: 600; color: var(--text); }
+  .demo-form label b { color: var(--cyan); }
+  .demo-form input, .demo-form select, .demo-form textarea { width: 100%; font: inherit; font-size: 1rem; color: var(--text); background: var(--bg); border: 1px solid rgba(130, 145, 165, .55); border-radius: 2px; padding: 11px 12px; }
+  .demo-form textarea { resize: vertical; min-height: 110px; }
+  .demo-form input:hover, .demo-form select:hover, .demo-form textarea:hover { border-color: var(--cyan); }
+  .demo-form [aria-invalid="true"] { border-color: #f87171; }
+  .demo-form .f-err { margin: 0; min-height: 0; color: #fca5a5; font-size: .84rem; }
+  .demo-form .f-err:empty { display: none; }
+  .demo-form .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .demo-form .btn { border: 0; font: inherit; font-weight: 600; cursor: pointer; width: 100%; }
+  .demo-form .btn:disabled { opacity: .6; cursor: progress; }
+  .demo-form .f-status { margin: 0; font-size: .95rem; color: var(--text); }
+  .demo-form .f-status:empty { display: none; }
+  .demo-form .f-status[data-kind="ok"] { color: #86efac; }
+  .demo-form .f-status[data-kind="err"] { color: #fca5a5; }
+  .demo-form .f-status a { color: inherit; }
+  .demo-form .f-note { margin: 0; font-size: .8rem; color: var(--muted); }
+  @media (max-width: 860px) { .cta .demo { grid-template-columns: 1fr; gap: 28px; } .demo-form { grid-template-columns: 1fr; padding: 18px; } }
   @media (max-width: 600px) { .foot { grid-template-columns: 1fr; } .foot-contact { text-align: left; } }
   @media (max-width: 860px) {
     .grid, .two { grid-template-columns: 1fr; }
@@ -352,7 +376,7 @@
       <li title="Yapay zekâ analizi" data-en-title="AI analysis" data-en="AI analysis">AI analiz</li>
     </ul>
     <div class="hero-cta">
-      <a class="btn" href="mailto:diprojectcontrol@gmail.com?subject=Janus%20demo%20talebi" data-en-href="mailto:diprojectcontrol@gmail.com?subject=Janus%20demo%20request" data-en="Request a Personal Demo">Kişisel Demo Talep Et</a>
+      <a class="btn" href="#iletisim" data-en="Request a Personal Demo">Kişisel Demo Talep Et</a>
       <a class="btn btn-line" id="explore" href="#urun" data-en="Explore the Platform">Platformu Keşfet</a>
     </div>
     <span class="hint" data-en="&lt;i&gt;&lt;/i&gt;The dam is being built; scroll to see the chart"><i></i>Baraj yapılıyor; grafiğe geçmek için kaydırın</span>
@@ -495,11 +519,55 @@
     </section>
 
     <section class="sec alt cta" id="iletisim">
-      <div class="wrap">
-        <h2 class="big" style="margin-inline:auto" data-en="Let&#x27;s look at your projects together.">Projelerinizde birlikte bakalım.</h2>
-        <p class="sub" data-en="We will show Janus with the structure of your own project data. A short note on your company, role and project type is enough.">Janus'u kendi proje verinizin yapısına göre gösterelim. Şirketiniz, rolünüz ve proje türünüz kısaca yeterli.</p>
-        <a class="btn" href="mailto:diprojectcontrol@gmail.com?subject=Janus%20demo%20talebi" data-en-href="mailto:diprojectcontrol@gmail.com?subject=Janus%20demo%20request" data-en="Request a demo">Demo talep et</a>
-        <p class="cta-mail" data-en="or write to us directly: &lt;a href=&quot;mailto:diprojectcontrol@gmail.com&quot;&gt;diprojectcontrol@gmail.com&lt;/a&gt;">veya doğrudan yazın: <a href="mailto:diprojectcontrol@gmail.com">diprojectcontrol@gmail.com</a></p>
+      <div class="wrap demo">
+        <div class="demo-copy">
+          <p class="eyebrow" data-en="Personal demo">Kişisel demo</p>
+          <h2 class="big" data-en="Let&#x27;s look at your projects together.">Projelerinizde birlikte bakalım.</h2>
+          <p class="sub" data-en="We will show Janus with the structure of your own project data. A short note on your company, role and project type is enough.">Janus'u kendi proje verinizin yapısına göre gösterelim. Şirketiniz, rolünüz ve proje türünüz kısaca yeterli.</p>
+          <p class="cta-mail" data-en="or write to us directly: &lt;a href=&quot;mailto:diprojectcontrol@gmail.com&quot;&gt;diprojectcontrol@gmail.com&lt;/a&gt;">veya doğrudan yazın: <a href="mailto:diprojectcontrol@gmail.com">diprojectcontrol@gmail.com</a></p>
+        </div>
+        <form class="demo-form" id="demoForm" novalidate>
+          <div class="f">
+            <label for="df-name"><span data-en="Full name">Ad soyad</span> <b aria-hidden="true">*</b></label>
+            <input id="df-name" name="name" type="text" autocomplete="name" maxlength="120" required aria-describedby="df-name-e">
+            <p class="f-err" id="df-name-e"></p>
+          </div>
+          <div class="f">
+            <label for="df-company"><span data-en="Company">Şirket</span> <b aria-hidden="true">*</b></label>
+            <input id="df-company" name="company" type="text" autocomplete="organization" maxlength="120" required aria-describedby="df-company-e">
+            <p class="f-err" id="df-company-e"></p>
+          </div>
+          <div class="f">
+            <label for="df-role" data-en="Your role">Rolünüz</label>
+            <input id="df-role" name="role" type="text" autocomplete="organization-title" maxlength="120" data-en-placeholder="e.g. Planning manager" placeholder="örn. Planlama müdürü">
+          </div>
+          <div class="f">
+            <label for="df-email"><span data-en="Email">E-posta</span> <b aria-hidden="true">*</b></label>
+            <input id="df-email" name="email" type="email" autocomplete="email" maxlength="160" required aria-describedby="df-email-e">
+            <p class="f-err" id="df-email-e"></p>
+          </div>
+          <div class="f wide">
+            <label for="df-type" data-en="Project type">Proje türü</label>
+            <select id="df-type" name="type">
+              <option value="" data-en="Select">Seçiniz</option>
+              <option value="Baraj" data-en="Dam">Baraj</option>
+              <option value="Havalimanı" data-en="Airport">Havalimanı</option>
+              <option value="Bina / kule" data-en="Building / tower">Bina / kule</option>
+              <option value="Altyapı" data-en="Infrastructure">Altyapı</option>
+              <option value="Diğer" data-en="Other">Diğer</option>
+            </select>
+          </div>
+          <div class="f wide">
+            <label for="df-msg" data-en="Message">Mesaj</label>
+            <textarea id="df-msg" name="message" rows="4" maxlength="1500"></textarea>
+          </div>
+          <div class="f hp" aria-hidden="true"><label>Website <input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>
+          <div class="f wide">
+            <button class="btn" type="submit" id="df-send" data-en="Request a Personal Demo">Kişisel Demo Talep Et</button>
+          </div>
+          <p class="f-status wide" id="df-status" role="status" aria-live="polite"></p>
+          <p class="f-note wide" data-en="* Required. Your details are used only to get back to your demo request.">* Zorunlu alan. Bilgileriniz yalnızca demo talebinize dönmek için kullanılır.</p>
+        </form>
       </div>
     </section>
 
@@ -825,6 +893,69 @@
   addEventListener('wheel', e => { if (window.__intro) skip(e); }, { passive: false });
   addEventListener('touchend', () => { if (window.__intro) finish(); }, { passive: true });
   addEventListener('keydown', e => { if (window.__intro && e.key !== 'Tab') finish(); });
+})();
+</script>
+<script>
+// Demo request form. DEMO_ENDPOINT is the Google Apps Script web app that stores the request in a Sheet and emails it
+// (setup: docs/demo-form/KURULUM.md). While it is empty the form opens a prefilled email draft instead; the page never
+// claims "sent" unless the server confirmed it.
+(() => {
+  const DEMO_ENDPOINT = '';
+  const MAIL = 'diprojectcontrol@gmail.com';
+  const form = document.getElementById('demoForm');
+  if (!form) return;
+  const status = document.getElementById('df-status'), send = document.getElementById('df-send');
+  const L = (tr, en) => (window.__lang === 'en' ? en : tr);
+  const say = (html, kind) => { status.innerHTML = html; status.dataset.kind = kind || ''; };
+  const mailLink = `<a href="mailto:${MAIL}">${MAIL}</a>`;
+
+  function check() {
+    let first = null;
+    const rules = [
+      ['df-name', el => el.value.trim() === '', L('Lütfen adınızı yazın.', 'Please enter your name.')],
+      ['df-company', el => el.value.trim() === '', L('Lütfen şirket adını yazın.', 'Please enter your company.')],
+      ['df-email', el => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value.trim()), L('Geçerli bir e-posta adresi yazın.', 'Please enter a valid email address.')],
+    ];
+    for (const [id, bad, msg] of rules) {
+      const el = document.getElementById(id), err = document.getElementById(id + '-e');
+      const invalid = bad(el);
+      el.setAttribute('aria-invalid', String(invalid));
+      err.textContent = invalid ? msg : '';
+      if (invalid && !first) first = el;
+    }
+    if (first) first.focus();
+    return !first;
+  }
+  form.addEventListener('input', e => {
+    if (e.target.getAttribute('aria-invalid') === 'true') { e.target.setAttribute('aria-invalid', 'false'); const err = document.getElementById(e.target.id + '-e'); if (err) err.textContent = ''; }
+  });
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    say('');
+    if (!check()) return;
+    const d = Object.fromEntries(new FormData(form));
+    if (d.website) { say(L('Teşekkürler.', 'Thank you.'), 'ok'); return; } // hidden field filled: a bot; pretend, send nothing
+    if (!DEMO_ENDPOINT) {
+      const lines = [`${L('Ad soyad', 'Name')}: ${d.name}`, `${L('Şirket', 'Company')}: ${d.company}`, `${L('Rol', 'Role')}: ${d.role || '-'}`,
+        `${L('E-posta', 'Email')}: ${d.email}`, `${L('Proje türü', 'Project type')}: ${d.type || '-'}`, '', d.message || ''];
+      location.href = `mailto:${MAIL}?subject=${encodeURIComponent(L('Janus demo talebi', 'Janus demo request'))}&body=${encodeURIComponent(lines.join('\n'))}`;
+      say(L('E-posta taslağınız açıldı. Göndermeyi e-posta uygulamanızdan tamamlayın; aksi halde şuraya yazın: ', 'Your email draft has opened. Finish sending it in your email app; otherwise write to ') + mailLink, '');
+      return;
+    }
+    send.disabled = true;
+    say(L('Gönderiliyor…', 'Sending…'));
+    const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const r = await fetch(DEMO_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...d, lang: window.__lang }), signal: ctrl.signal });
+      const j = await r.json();
+      if (!j.ok) throw new Error('rejected');
+      form.reset();
+      say(L('Teşekkürler, talebiniz bize ulaştı. En kısa sürede dönüş yapacağız.', 'Thank you, your request reached us. We will get back to you shortly.'), 'ok');
+    } catch (err) {
+      say(L('Gönderilemedi. Yazdıklarınız duruyor; tekrar deneyin veya doğrudan yazın: ', 'Could not send. Your input is kept; try again or write to us directly: ') + mailLink, 'err');
+    } finally { clearTimeout(timer); send.disabled = false; }
+  });
 })();
 </script>
 </body>
