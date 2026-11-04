@@ -106,7 +106,8 @@ controls.target.set(-2, 2, -6);
 controls.enableDamping = true;
 controls.maxPolarAngle = Math.PI * 0.47;
 
-scene.add(new THREE.HemisphereLight('#dbe7ff', '#1a2440', 1.1));
+const hemi = new THREE.HemisphereLight('#dbe7ff', '#1a2440', 1.1);
+scene.add(hemi);
 const sun = new THREE.DirectionalLight('#ffffff', 2.3);
 sun.position.set(60, 110, 70);
 sun.castShadow = true;
@@ -115,6 +116,38 @@ sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.05;
 Object.assign(sun.shadow.camera, { left: -95, right: 95, top: 75, bottom: -75, near: 10, far: 300 });
 scene.add(sun);
+
+// Cinematic look on wide screens (phones keep the light set-up above): a low, warm raking light with long shadows,
+// a cool fill, depth haze, a slow camera drift and a soft glow on the brightest parts (same recipe as the dam).
+const CINE = !LITE;
+const HAZE = '#14315c';
+const camRest = camera.position.clone();
+if (CINE) {
+  sun.color.set('#ffe8cc');
+  renderer.toneMappingExposure = 1.3;
+  sun.intensity = 3.4;
+  sun.position.set(120, 45, -35); // low, from the viewer's right
+  Object.assign(sun.shadow.camera, { left: -140, right: 140, top: 110, bottom: -110, near: 1, far: 480 });
+  sun.shadow.camera.updateProjectionMatrix();
+  hemi.color.set('#9cc2ff');
+  hemi.groundColor.set('#0a1830');
+  hemi.intensity = 1.1;
+  scene.fog.near = 150;
+  scene.fog.far = 400;
+}
+let post = null;
+const NOPOST = QS.has('nopost'); // for measuring the glow's cost
+if (CINE && !NOPOST) {
+  const [{ EffectComposer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }] = await Promise.all([
+    import('three/addons/postprocessing/EffectComposer.js'), import('three/addons/postprocessing/RenderPass.js'),
+    import('three/addons/postprocessing/UnrealBloomPass.js'), import('three/addons/postprocessing/OutputPass.js'),
+  ]);
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.78));
+  composer.addPass(new OutputPass());
+  post = { render: () => composer.render(), setSize: (w, h) => { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); } };
+}
 
 // ------------------------------------------------------------------ materials: original / maquette / blueprint
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra });
@@ -323,7 +356,7 @@ function fit(obj, h, kind) {
 }
 const [dozerG, workerA, workerB, planeG] = await Promise.all(['bulldozer-a', 'worker-a', 'worker-b', 'boeing-747'].map(f => loader.loadAsync(`models/${f}.glb`)));
 const dozer = fit(dozerG.scene, 3.2);
-const plane = fit(planeG.scene, 34, 'plane');
+const plane = fit(planeG.scene, 26, 'plane');
 
 function worker(src, clipName) {
   const w = fit(SkeletonUtils.clone(src.scene), 1.8, 'worker');
@@ -372,7 +405,7 @@ function setMode(mode) {
     else if (o.userData.maqMat) o.material = [o.userData.origMat, o.userData.maqMat, o.userData.bpMat][i];
   });
   scene.background = mode === 'bp' ? backdrop.texture : new THREE.Color(BG[mode]);
-  scene.fog.color.set(BG[mode]);
+  scene.fog.color.set(mode === 'bp' && CINE ? HAZE : BG[mode]);
   for (const k of Object.keys(IDX)) document.getElementById(k).setAttribute('aria-pressed', k === mode);
 }
 for (const k of Object.keys(IDX)) document.getElementById(k).onclick = () => setMode(k);
@@ -474,7 +507,7 @@ function update(c, t) {
 // ------------------------------------------------------------------ EVM: the runway becomes the time axis
 const SC = scenario({ months: 24, today: 14, rate: 12.5 / 14, cpi: 0.98 });
 const chart = createEvmChart(SC, {
-  origin: new THREE.Vector3(RWY.x0 + 6, 0.7, RWY.z), axis: new THREE.Vector3(1, 0, 0), len: RWY.x1 - RWY.x0 - 12, height: 34,
+  origin: new THREE.Vector3(RWY.x0 + 6, 0.7, RWY.z), axis: new THREE.Vector3(1, 0, 0), len: RWY.x1 - RWY.x0 - 12, height: 48,
   columns: false, ac: false, es: true,
   kpis: [
     { name: 'SPI(t)', value: fmt(SC.spiT), sub: t('zamana dayalı takvim performansı', 'time-based schedule performance'), m: 18.5, v: 40 },
@@ -484,7 +517,7 @@ const chart = createEvmChart(SC, {
 });
 scene.add(chart.group);
 document.querySelectorAll('.evm-label.kpi')[1]?.classList.add('warn');
-const CHART_TGT = new THREE.Vector3(8, 18, RWY.z), CHART_DIR = new THREE.Vector3(0, 31, 160).normalize(), CHART_SIZE = { w: 124, h: 46 }; // wider than the axis and centred right of it: the late forecast runs past month 24
+const CHART_TGT = new THREE.Vector3(8, 25, RWY.z), CHART_DIR = new THREE.Vector3(0, 31, 160).normalize(), CHART_SIZE = { w: 124, h: 54 }; // wider than the axis and centred right of it: the late forecast runs past month 24
 const CHART_CAM = new THREE.Vector3();
 // Camera distance that fits the chart: by its height, and by the free width (on the landing page the caption takes the left third).
 function fitChartCam() {
@@ -539,6 +572,14 @@ function moveCamera(cam) {
   camera.lookAt(controls.target);
   if (cam <= 0) { camera.position.copy(home.p); controls.target.copy(home.t); home = null; controls.enabled = true; }
 }
+// Slow drift on the landing page: a gentle swing and a push-in as the airport takes shape; time stops while the chart
+// is shown and with reduced motion, so it never jumps.
+const UP = new THREE.Vector3(0, 1, 0);
+function drift(c, t) {
+  const off = camRest.clone().sub(controls.target).applyAxisAngle(UP, 0.08 * Math.sin(t * 0.045)).multiplyScalar(1.06 - 0.1 * c);
+  camera.position.copy(controls.target).add(off);
+  camera.lookAt(controls.target);
+}
 // During the chart the plane taxis onto the runway at "today" and serves as its marker.
 function planeMarker(mark) {
   plane.scale.setScalar(1 - 0.45 * smooth(mark));
@@ -571,6 +612,7 @@ function syncSize() {
   else camera.clearViewOffset();
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  if (post) post.setSize(innerWidth, innerHeight);
   labelRenderer.setSize(innerWidth, innerHeight);
   backdrop.resize(camera.aspect);
 }
@@ -581,7 +623,7 @@ let simT = 0;
 // Compile every material once up front (also the ones that are still hidden, e.g. the chart), so nothing compiles mid-animation.
 // Draw it once with everything shown, so geometry and textures are on the GPU before the scene is visible.
 { const hid = [], cull = []; scene.traverse(o => { if (!o.visible) { hid.push(o); o.visible = true; } if (o.frustumCulled) { cull.push(o); o.frustumCulled = false; } });
-  renderer.compile(scene, camera); renderer.render(scene, camera);
+  renderer.compile(scene, camera); renderer.render(scene, camera); if (post) post.render();
   hid.forEach(o => { o.visible = false; }); cull.forEach(o => { o.frustumCulled = true; }); }
 let lastPhase = '', warm = 0;
 renderer.setAnimationLoop(() => {
@@ -603,6 +645,7 @@ renderer.setAnimationLoop(() => {
   chart.set(st.k, st.chartFade);
   planeMarker(st.mark);
   moveCamera(st.cam);
+  if (CINE && EMBED && !home) drift(st.c, simT);
   if (st.evm && st.k > 0.6) { const h = evmText(); if (h !== lastPhase) document.getElementById('phase').innerHTML = lastPhase = h; }
   document.getElementById('pct').textContent = Math.round(progress * 100) + '%';
   document.getElementById('note').style.opacity = st.chartFade > 0.5 ? 1 : 0;
@@ -612,7 +655,7 @@ renderer.setAnimationLoop(() => {
     else s.obj.rotation[s.axis] += s.speed * sdt;
   }
   if (controls.enabled) controls.update();
-  renderer.render(scene, camera);
+  if (post) post.render(); else renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
 });
 Object.assign(window, { __ready: true, THREE, camera, controls, plane, chart, SC, setProgress: v => { progress = v; playing = false; range.value = Math.round(v * 1000); } });
