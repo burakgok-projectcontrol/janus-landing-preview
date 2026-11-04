@@ -60,6 +60,13 @@
   .brand span, .foot-brand b { letter-spacing: .16em; }
   .btn { display: inline-block; padding: 12px 22px; border-radius: 3px; background: var(--grad); color: #fff; font-weight: 600; text-decoration: none; box-shadow: none; }
   .btn-sm { padding: 8px 16px; font-size: .92rem; }
+  .btn-line { background: transparent; border: 1px solid rgba(241, 245, 249, .45); padding: 11px 21px; }
+  .btn-line:hover { border-color: var(--cyan); color: var(--cyan); }
+  .hero-cap .lede { margin: 0 0 16px; }
+  .hero-chips { list-style: none; padding: 0; margin: 0 0 22px; display: flex; flex-wrap: wrap; gap: 6px; max-width: 46ch; }
+  .hero-chips li { border: 1px solid var(--line); background: rgba(7, 17, 31, .55); padding: 4px 9px; border-radius: 2px; font: 600 .8rem/1.3 ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--text); cursor: help; }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; pointer-events: auto; }
+  @media (max-width: 860px) { .hero-chips { margin-bottom: 14px; } .hero-cap .hint { display: none; } .hero-cta .btn { flex: 1 1 150px; text-align: center; padding: 11px 14px; font-size: .92rem; } .hero-cap .lede { font-size: .9rem; } .hero-chips li { font-size: .74rem; padding: 3px 7px; } }
   .lang { margin-left: auto; display: inline-flex; border: 1px solid var(--line); border-radius: 2px; padding: 3px; background: rgba(7, 17, 31, .6); }
   .lang button { all: unset; cursor: pointer; padding: 5px 11px; border-radius: 2px; font: 600 .8rem/1 system-ui, sans-serif; letter-spacing: .06em; color: var(--muted); }
   .lang button[aria-pressed="true"] { background: rgba(53, 199, 232, .16); color: var(--text); }
@@ -186,7 +193,7 @@
   }
 
   /* Opening: Janus drawn as a blueprint — past (left, solid), today (centre), future (right, projected). */
-  #intro { position: fixed; inset: 0; z-index: 40; background: #07111F; display: grid; place-items: center; overflow: hidden; transition: opacity .8s ease; cursor: pointer; }
+  #intro { position: fixed; inset: 0; z-index: 40; background: #0a1f44; display: grid; place-items: center; overflow: hidden; transition: opacity .8s ease; cursor: pointer; }
   #intro::before { content: ""; position: absolute; inset: 0; opacity: 0; animation: fadeIn .8s ease forwards;
     background-image: linear-gradient(rgba(120, 180, 255, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .07) 1px, transparent 1px),
       linear-gradient(rgba(120, 180, 255, .15) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .15) 1px, transparent 1px);
@@ -205,7 +212,7 @@
   #intro .heads img { position: absolute; left: calc(50vw - 263 * var(--u)); top: calc(50vh - 260 * var(--u)); width: calc(560 * var(--u)); height: calc(533 * var(--u));
     clip-path: circle(0 at 46.96% 45.03%); will-change: clip-path; animation: bustReveal 2.6s cubic-bezier(.45, 0, .25, 1) .9s forwards; }
   #intro .heads .scan { position: absolute; left: calc(50vw - 600 * var(--u)); top: calc(50vh - 620 * var(--u)); width: calc(1200 * var(--u)); height: calc(1200 * var(--u));
-    border: 2px solid #35C7E8; border-radius: 50%; opacity: .85; transform: scale(0); will-change: transform, opacity;
+    border: 2px solid #22d3ee; border-radius: 50%; opacity: .85; transform: scale(0); will-change: transform, opacity;
     animation: scanGrow 2.6s cubic-bezier(.45, 0, .25, 1) .9s forwards, scanOut .6s linear 2.9s forwards; }
   @keyframes bustReveal { to { clip-path: circle(110% at 46.96% 45.03%); } }
   @keyframes scanGrow { to { transform: scale(1); } }
@@ -268,8 +275,8 @@
   </div>
   <svg viewBox="0 0 1200 700" aria-hidden="true">
     <defs>
-      <linearGradient id="ifut" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35C7E8"/><stop offset="1" stop-color="#8FDCF0"/></linearGradient>
-      <radialGradient id="iglowg"><stop offset="0" stop-color="#35C7E8" stop-opacity=".9"/><stop offset=".45" stop-color="#35C7E8" stop-opacity=".45"/><stop offset="1" stop-color="#35C7E8" stop-opacity="0"/></radialGradient>
+      <linearGradient id="ifut" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
+      <radialGradient id="iglowg"><stop offset="0" stop-color="#22d3ee" stop-opacity=".9"/><stop offset=".45" stop-color="#22d3ee" stop-opacity=".45"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
     </defs>
     <!-- sheet frame and construction geometry -->
     <g fill="none" stroke="#cfe8ff" stroke-opacity=".55">
@@ -283,17 +290,17 @@
     <line class="draw dash" pathLength="1" style="--d:1.6s;--t:1s" x1="600" y1="40" x2="600" y2="660" stroke="#ffffff" stroke-opacity=".8" stroke-width="1.6"/>
     <text class="fade" style="--d:2.6s" x="600" y="72" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="20" font-weight="700" letter-spacing="4" data-en="TODAY">BUGÜN</text>
     <!-- past: measured, solid -->
-    <g><rect class="grow" style="--d:3.00s" x="96" y="542" width="24" height="18" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.10s" x="136" y="526" width="24" height="34" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.20s" x="176" y="502" width="24" height="58" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.30s" x="216" y="468" width="24" height="92" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.40s" x="256" y="430" width="24" height="130" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.50s" x="296" y="392" width="24" height="168" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.60s" x="336" y="364" width="24" height="196" fill="rgba(53, 199, 232,.28)" stroke="#e6edf7" stroke-width="1.2"/></g>
-    <path class="draw" pathLength="1" style="--d:3.2s;--t:1.2s" d="M90 556 C180 552 260 520 330 440 C350 412 362 380 370 360" fill="none" stroke="#35C7E8" stroke-width="3"/>
+    <g><rect class="grow" style="--d:3.00s" x="96" y="542" width="24" height="18" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.10s" x="136" y="526" width="24" height="34" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.20s" x="176" y="502" width="24" height="58" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.30s" x="216" y="468" width="24" height="92" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.40s" x="256" y="430" width="24" height="130" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.50s" x="296" y="392" width="24" height="168" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.60s" x="336" y="364" width="24" height="196" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/></g>
+    <path class="draw" pathLength="1" style="--d:3.2s;--t:1.2s" d="M90 556 C180 552 260 520 330 440 C350 412 362 380 370 360" fill="none" stroke="#22d3ee" stroke-width="3"/>
     <text class="fade" style="--d:3.4s" x="96" y="610" fill="#e6edf7" font-family="system-ui, sans-serif" font-size="26" font-weight="800" letter-spacing="3" data-en="PAST">GEÇMİŞ</text>
     <text class="fade" style="--d:3.6s" x="96" y="638" fill="#9fb0c9" font-family="system-ui, sans-serif" font-size="16" data-en="actual · measured · on record">gerçekleşen · ölçülen · kayıt altında</text>
     <!-- future: projected, dashed cone -->
     <g fill="none" stroke-width="2.4" stroke-linecap="round">
       <path class="draw" pathLength="1" style="--d:3.8s;--t:1.3s" d="M830 360 C900 300 980 240 1110 214" stroke="url(#ifut)" stroke-dasharray="10 9"/>
-      <path class="draw" pathLength="1" style="--d:4.0s;--t:1.3s" d="M830 360 C910 330 990 300 1110 290" stroke="#8FDCF0" stroke-opacity=".6"/>
-      <path class="draw" pathLength="1" style="--d:4.0s;--t:1.3s" d="M830 360 C900 270 980 190 1110 150" stroke="#8FDCF0" stroke-opacity=".6"/>
+      <path class="draw" pathLength="1" style="--d:4.0s;--t:1.3s" d="M830 360 C910 330 990 300 1110 290" stroke="#a78bfa" stroke-opacity=".6"/>
+      <path class="draw" pathLength="1" style="--d:4.0s;--t:1.3s" d="M830 360 C900 270 980 190 1110 150" stroke="#a78bfa" stroke-opacity=".6"/>
     </g>
-    <text class="fade" style="--d:4.2s" x="1104" y="610" text-anchor="end" fill="#8FDCF0" font-family="system-ui, sans-serif" font-size="26" font-weight="800" letter-spacing="3" data-en="FUTURE">GELECEK</text>
+    <text class="fade" style="--d:4.2s" x="1104" y="610" text-anchor="end" fill="#c4b5fd" font-family="system-ui, sans-serif" font-size="26" font-weight="800" letter-spacing="3" data-en="FUTURE">GELECEK</text>
     <text class="fade" style="--d:4.4s" x="1104" y="638" text-anchor="end" fill="#9fb0c9" font-family="system-ui, sans-serif" font-size="16" data-en="projection · forecast · decision">projeksiyon · tahmin · karar</text>
     <!-- the two faces: line drawing traced from the user's photo of a marble Janus bust;
          the elder (left, past) in white, the youth (right, future) in cyan to violet; it is revealed outwards from "today" -->
@@ -307,7 +314,7 @@
       <path class="draw" pathLength="1" style="--d:5.3s;--t:1s" d="M50 16 A44 44 0 0 0 50 104" stroke="#e6edf7" stroke-width="9"/>
       <path class="draw" pathLength="1" style="--d:5.45s;--t:1s" d="M70 16 A44 44 0 0 1 70 104" stroke="url(#ifut)" stroke-width="9"/>
       <path class="draw" pathLength="1" style="--d:5.7s;--t:.7s" d="M52 36 A26 26 0 0 0 52 84" stroke="#e6edf7" stroke-width="2.5" stroke-opacity=".4"/>
-      <path class="fade" style="--d:5.8s" d="M68 36 A26 26 0 0 1 68 84" stroke="#35C7E8" stroke-width="2.5" stroke-dasharray="3 5" stroke-opacity=".7"/>
+      <path class="fade" style="--d:5.8s" d="M68 36 A26 26 0 0 1 68 84" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="3 5" stroke-opacity=".7"/>
     </g>
     <text class="fade" style="--d:6.2s" x="600" y="508" text-anchor="middle" fill="#e6edf7" font-family="system-ui, sans-serif" font-size="46" font-weight="800" letter-spacing="2">Janus</text>
     <text class="fade" style="--d:6.5s" x="600" y="544" text-anchor="middle" fill="#a9bad3" font-family="system-ui, sans-serif" font-size="20" data-en="Measure the Past, Manage the Future">Geçmişi Ölç, Geleceği Yönet</text>
@@ -333,9 +340,21 @@
 <!-- Captions: data-scene, data-from, data-to (scene progress 0..1). -->
 <div class="captions" id="captions">
   <div class="cap hero-cap" data-scene="0" data-from="-1" data-to="0.3">
-    <p class="eyebrow" data-en="Project control platform for construction">İnşaat için proje kontrol platformu</p>
+    <p class="eyebrow" data-en="Project control platform for construction">İnşaat projeleri için proje kontrol platformu</p>
     <h1 data-en="Measure the Past,&lt;br&gt;&lt;span class=&quot;grad&quot;&gt;Manage the Future&lt;/span&gt;">Geçmişi Ölç,<br><span class="grad">Geleceği Yönet</span></h1>
-    <p data-en="Janus brings the BOQ (bill of quantities), activities, budget and actual cost from your ERP into one control model. Everything that rises on site is a measured value in Janus.">Janus; BOQ'yu (metraj-keşif listesi), aktiviteleri, bütçeyi ve ERP'deki gerçekleşen maliyeti tek bir kontrol modelinde birleştirir. Sahada yükselen her şey, Janus'ta ölçülen bir değerdir.</p>
+    <p class="lede" data-en="JANUS brings work items, cost and schedule into one model. Project control teams see variances without waiting for the month-end report.">JANUS; iş kalemlerini, maliyeti ve takvimi tek modelde birleştirir. Proje kontrol ekipleri, sapmayı ay sonu raporunu beklemeden görür.</p>
+    <ul class="hero-chips" aria-label="Ölçülen büyüklükler" data-en-aria-label="Measured quantities">
+      <li title="BOQ: metraj-keşif listesi" data-en-title="BOQ: bill of quantities">BOQ</li>
+      <li title="PV / EV / AC: planlanan değer, kazanılan değer, gerçekleşen maliyet" data-en-title="PV / EV / AC: planned value, earned value, actual cost">PV · EV · AC</li>
+      <li title="CPI / SPI: maliyet ve takvim performans endeksi" data-en-title="CPI / SPI: cost and schedule performance index">CPI · SPI</li>
+      <li title="EAC: tamamlanma anındaki tahmini maliyet" data-en-title="EAC: estimate at completion">EAC</li>
+      <li title="Earned Schedule: kazanılmış takvim" data-en-title="Earned Schedule">Earned Schedule</li>
+      <li title="Yapay zekâ analizi" data-en-title="AI analysis" data-en="AI analysis">AI analiz</li>
+    </ul>
+    <div class="hero-cta">
+      <a class="btn" href="mailto:diprojectcontrol@gmail.com?subject=Janus%20demo%20talebi" data-en-href="mailto:diprojectcontrol@gmail.com?subject=Janus%20demo%20request" data-en="Request a Personal Demo">Kişisel Demo Talep Et</a>
+      <a class="btn btn-line" id="explore" href="#urun" data-en="Explore the Platform">Platformu Keşfet</a>
+    </div>
     <span class="hint" data-en="&lt;i&gt;&lt;/i&gt;The dam is being built; scroll to see the chart"><i></i>Baraj yapılıyor; grafiğe geçmek için kaydırın</span>
   </div>
   <div class="cap" data-scene="0" data-from="0.3" data-to="0.5001">
@@ -660,6 +679,7 @@
   next.addEventListener('click', forward);
   railBtns.forEach(b => b.addEventListener('click', () => jumpTo(+b.dataset.i)));
   document.getElementById('skip').addEventListener('click', e => { e.preventDefault(); toContent(); });
+  document.getElementById('explore').addEventListener('click', e => { e.preventDefault(); toContent(); });
   document.querySelectorAll('a[href="#iletisim"]').forEach(a => a.addEventListener('click', () => { if (mode === 'story') { mode = 'content'; root.classList.remove('story'); } }));
 
   function frame(now) {
