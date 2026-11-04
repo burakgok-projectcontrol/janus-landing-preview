@@ -238,7 +238,17 @@
       linear-gradient(rgba(120, 180, 255, .15) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .15) 1px, transparent 1px);
     background-size: 32px 32px, 32px 32px, 160px 160px, 160px 160px; background-position: center; }
   #intro.out { opacity: 0; pointer-events: none; }
-  #intro.hold *, #intro.hold::before { animation-play-state: paused !important; }
+  #intro.hold *, #intro.hold::before, #intro.hold::after { animation-play-state: paused !important; }
+  /* Cinematic touch on wide screens: a slow push-in, a warm light from the upper right and a soft vignette. The drawing
+     itself is unchanged; only a transform and two static gradient layers are added, so it stays smooth. */
+  @media (min-width: 861px) {
+    #intro > svg { animation: introPush 7.6s cubic-bezier(.3, 0, .2, 1) forwards; }
+    #intro .heads { animation: headsOut .9s ease 5.3s forwards, introPush 7.6s cubic-bezier(.3, 0, .2, 1) forwards; }
+    #intro::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; animation: fadeIn 1.6s ease .3s forwards;
+      background: radial-gradient(55% 65% at 88% 16%, rgba(255, 214, 170, .13), transparent 62%), radial-gradient(125% 95% at 50% 48%, transparent 52%, rgba(3, 9, 22, .6) 100%); }
+    #intro .skipnote { z-index: 3; }
+  }
+  @keyframes introPush { from { transform: scale(1); } to { transform: scale(1.05); } }
   #intro svg { width: 100vw; height: 100vh; position: relative; overflow: visible; } /* viewBox keeps it fitted (meet) */
   #intro .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw var(--t, 1.4s) cubic-bezier(.5, 0, .2, 1) var(--d, 0s) forwards; }
   #intro .dash { stroke-dasharray: .012 .01; }
@@ -263,8 +273,8 @@
   @keyframes grow { to { transform: scaleY(1); } }
   @keyframes headsOut { to { opacity: .12; } }
   @keyframes pulse { 50% { transform: scale(1.35); } }
-  @media (prefers-reduced-motion: reduce) { #intro *, #intro::before { animation-duration: .01s !important; animation-delay: 0s !important; } }
-  #intro.quick *, #intro.quick::before { animation-duration: .01s !important; animation-delay: 0s !important; } /* reload: jump to the last frame */
+  @media (prefers-reduced-motion: reduce) { #intro *, #intro::before, #intro::after { animation-duration: .01s !important; animation-delay: 0s !important; } }
+  #intro.quick *, #intro.quick::before, #intro.quick::after { animation-duration: .01s !important; animation-delay: 0s !important; } /* reload: jump to the last frame */
   #intro.quick .core { animation: fadeIn .01s forwards !important; }
   #intro.quick .skipnote { display: none; }
   .why { display: grid; grid-template-columns: auto 1fr; gap: 40px; align-items: center; }

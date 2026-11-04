@@ -623,7 +623,8 @@ let simT = 0;
 // Compile every material once up front (also the ones that are still hidden, e.g. the chart), so nothing compiles mid-animation.
 // Draw it once with everything shown, so geometry and textures are on the GPU before the scene is visible.
 { const hid = [], cull = []; scene.traverse(o => { if (!o.visible) { hid.push(o); o.visible = true; } if (o.frustumCulled) { cull.push(o); o.frustumCulled = false; } });
-  renderer.compile(scene, camera); renderer.render(scene, camera); if (post) post.render();
+  // compileAsync lets the browser build the shaders in the background (no long freeze when the scene starts).
+  await renderer.compileAsync(scene, camera); renderer.render(scene, camera); if (post) post.render();
   hid.forEach(o => { o.visible = false; }); cull.forEach(o => { o.frustumCulled = true; }); }
 let lastPhase = '', warm = 0;
 renderer.setAnimationLoop(() => {
