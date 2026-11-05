@@ -19,6 +19,7 @@ export const CHART_CSS = `
 .evm-label.ac { color: #fcd34d; }
 .evm-label.axis { color: #b4cdea; font-weight: 500; font-size: 12px; }
 .evm-label.today { color: #fff; }
+.evm-label.gap { color: #fca5a5; font-weight: 700; }
 .evm-label.kpi { --tone: #67e8f9; min-width: 150px; background: rgba(7, 17, 31, .9); border: 1px solid rgba(165, 214, 255, .25); border-left: 3px solid var(--tone); border-radius: 4px; padding: 10px 14px 10px 12px;
   font: 600 11px/1.2 ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace; letter-spacing: .06em; text-transform: uppercase; color: #cfe0f5; text-shadow: none; }
 .evm-label.kpi b { display: block; margin: 5px 0 3px; font: 700 30px/1.05 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: -.01em; text-transform: none; color: var(--tone); }
@@ -65,7 +66,8 @@ export function scenario({ months = 20, today = 11, rate = 20 / 19.6, cpi = 1.04
 }
 
 // origin: point at (month 0, value 0); axis: unit vector along time; len: axis length; height: 100 % in metres.
-export function createEvmChart(sc, { origin, axis, len, height, columns = true, ac = true, es = false, kpis = [], labelAt = {} }) {
+// thick: curve thickness factor (a far chart camera, e.g. the airport on a phone, needs bolder curves).
+export function createEvmChart(sc, { origin, axis, len, height, columns = true, ac = true, es = false, kpis = [], labelAt = {}, thick = 1 }) {
   chartStyles();
   const g = new THREE.Group();
   const UP = new THREE.Vector3(0, 1, 0);
@@ -98,6 +100,8 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
     grid: lineMat('#5fa8ff', 0.3, true),
     today: lineMat('#ffffff', 0.9, true),
     es: lineMat('#67e8f9', 0.9, true),
+    esTube: mat('#a5f3fc', { emissive: '#35C7E8', emissiveIntensity: 1 }),
+    gap: mat('#f87171', { opacity: 0.22, emissive: '#dc2626', emissiveIntensity: 0.5, depthWrite: false, side: THREE.DoubleSide }),
   };
   const line = (pts, m, parent = g) => {
     const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), m);
@@ -155,10 +159,10 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
     for (let m = m0; m < m1; m += 0.5) { const d = tube(fn, m, Math.min(m1, m + 0.32), r, material, 6); reveal(d, 1); out.push(d); }
     return out;
   };
-  const pvDashes = dashes(sc.pv, 0, sc.months, 0.2, C.pv);
-  const evLine = tube(sc.ev, 0, sc.today, 0.3, C.ev);
-  const acLine = ac ? tube(sc.ac, 0, sc.today, 0.28, C.ac) : null;
-  const fcDashes = dashes(sc.ev, sc.today, Math.min(sc.earnedEnd, sc.months * 1.25), 0.17, C.ev);
+  const pvDashes = dashes(sc.pv, 0, sc.months, 0.2 * thick, C.pv);
+  const evLine = tube(sc.ev, 0, sc.today, 0.3 * thick, C.ev);
+  const acLine = ac ? tube(sc.ac, 0, sc.today, 0.28 * thick, C.ac) : null;
+  const fcDashes = dashes(sc.ev, sc.today, Math.min(sc.earnedEnd, sc.months * 1.25), 0.17 * thick, C.ev);
 
   const todayLine = line([P(sc.today, 0), P(sc.today, 112)], C.today);
 
@@ -167,8 +171,19 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
   if (es) {
     g.add(esGroup);
     const v = sc.ev(sc.today);
-    line([P(sc.today, v), P(sc.es, v)], C.es, esGroup);
-    line([P(sc.es, v), P(sc.es, 0)], C.es, esGroup);
+    // ES trace: from today's EV back along the curve's level to the month the plan reached it, then down. Drawn as
+    // solid tubes so it reads as clearly as the curves.
+    const esH = tube(() => v, sc.es, sc.today, 0.16 * thick, C.esTube);
+    reveal(esH, 1);
+    esGroup.add(esH);
+    const esV = new THREE.Mesh(new THREE.CylinderGeometry(0.16 * thick, 0.16 * thick, (height * v) / 100, 8), C.esTube);
+    esV.position.copy(P(sc.es, v / 2));
+    esGroup.add(esV);
+    // The delay: a red band between the earned schedule and today, up to today's EV.
+    const gap = new THREE.Mesh(new THREE.PlaneGeometry((len * (sc.today - sc.es)) / sc.months, (height * v) / 100), C.gap);
+    gap.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(axis.clone().normalize(), UP, across));
+    gap.position.copy(P((sc.es + sc.today) / 2, v / 2));
+    esGroup.add(gap);
     const bar = (m, side, material) => {
       const geo = new THREE.BoxGeometry(1, 0.3, 1.8).translate(0.5, 0.15, 0);
       const b = new THREE.Mesh(geo, material);
@@ -202,7 +217,8 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
   label(L_('Bugün · ay ', 'Today · month ') + fmt(t, 0), P(t, 112).add(up(1.5)), 'today', 0.75);
   if (es) {
     label(L_(`ES · kazanılan zaman: ay ${fmt(sc.es, 1)}`, `ES · earned schedule: month ${fmt(sc.es, 1)}`), P(sc.es * 0.55, 0, -5).add(up(2)), 'ev', 0.8);
-    label(L_(`plana göre bugün: ay ${fmt(t, 0)}`, `planned for today: month ${fmt(t, 0)}`), P(t * 0.55, 0, 5).add(up(-2.5)), 'pv', 0.8);
+    label(L_(`plana göre bugün: ay ${fmt(t, 0)}`, `planned for today: month ${fmt(t, 0)}`), P(t * 0.3, 0, 5).add(up(-8.5)), 'pv', 0.8);
+    label(L_(`${fmt(t - sc.es, 1)} ay geride`, `${fmt(t - sc.es, 1)} months behind`), P((sc.es + t) / 2, sc.ev(t)).add(up(4)), 'gap', 0.8);
   }
   // Indicator cards: same card in every scene; they appear once the curves are drawn.
   kpis.forEach((k, i) => label(`${k.name} <b>${k.value}</b><span>${k.sub}</span>`, P(k.m ?? t + 5, k.v ?? 46 - i * 32), `kpi ${k.tone || ''}`, 0.74 + i * 0.05));

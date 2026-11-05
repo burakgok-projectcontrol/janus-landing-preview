@@ -502,10 +502,11 @@ const chart = createEvmChart(SC, {
   origin: new THREE.Vector3(RWY.x0 + 6, 0.7, RWY.z), axis: new THREE.Vector3(1, 0, 0), len: RWY.x1 - RWY.x0 - 12, height: 48,
   columns: false, ac: false, es: true,
   kpis: [
-    { name: 'SPI(t)', value: fmt(SC.spiT), sub: t('zamana dayalı takvim performansı', 'time-based schedule performance'), m: 18.5, v: 44, tone: 'warn' },
-    { name: t('Gecikme', 'Delay'), value: `${fmt(SC.today - SC.es, 1)} ${t('ay', 'months')}`, sub: t('Earned Schedule · kazanılan zaman', 'Earned Schedule · time earned'), m: 18.5, v: 10, tone: 'bad' },
+    { name: 'SPI(t)', value: fmt(SC.spiT), sub: t('zamana dayalı takvim performansı', 'time-based schedule performance'), m: 22, v: 44, tone: 'warn' },
+    { name: t('Gecikme', 'Delay'), value: `${fmt(SC.today - SC.es, 1)} ${t('ay', 'months')}`, sub: t('Earned Schedule · kazanılan zaman', 'Earned Schedule · time earned'), m: 22, v: 10, tone: 'bad' },
   ],
-  labelAt: { pv: [19, 0, 3.5], ev: [8, 0, 6] },
+  labelAt: { pv: [16.5, 0, 5], ev: [8, 0, 6] },
+  thick: LITE ? 1.7 : 1,
 });
 scene.add(chart.group);
 const CHART_TGT = new THREE.Vector3(8, 25, RWY.z), CHART_DIR = new THREE.Vector3(0, 31, 160).normalize(), CHART_SIZE = { w: 124, h: 54 }; // wider than the axis and centred right of it: the late forecast runs past month 24
@@ -563,11 +564,16 @@ function moveCamera(cam) {
   camera.lookAt(controls.target);
   if (cam <= 0) { camera.position.copy(home.p); controls.target.copy(home.t); home = null; controls.enabled = true; }
 }
-// Slow drift on the landing page: a gentle swing and a push-in as the airport takes shape; time stops while the chart
-// is shown and with reduced motion, so it never jumps.
+// Framing on the landing page: the opening is close to the first work front (grader, dozer and the terminal's
+// foundations at the west end), then the camera pulls back to the whole airport as it takes shape. On wide screens a
+// gentle swing is added; time stops while the chart is shown and with reduced motion, so it never jumps.
 const UP = new THREE.Vector3(0, 1, 0);
+const TGT_REST = controls.target.clone(), TGT_OPEN = LITE ? new THREE.Vector3(-12, 2, 0) : new THREE.Vector3(-40, 2, 4); // phones: a milder move (narrow view)
 function drift(c, t) {
-  const off = camRest.clone().sub(controls.target).applyAxisAngle(UP, 0.08 * Math.sin(t * 0.045)).multiplyScalar(1.06 - 0.1 * c);
+  const k = smooth(clamp01(c / 0.45));
+  controls.target.lerpVectors(TGT_OPEN, TGT_REST, k);
+  const swing = CINE ? 0.08 * Math.sin(t * 0.045) : 0;
+  const off = camRest.clone().sub(TGT_REST).applyAxisAngle(UP, swing).multiplyScalar(THREE.MathUtils.lerp(LITE ? 0.9 : 0.42, 1.02, k) - 0.06 * c);
   camera.position.copy(controls.target).add(off);
   camera.lookAt(controls.target);
 }
@@ -634,7 +640,7 @@ renderer.setAnimationLoop(() => {
   chart.set(st.k, st.chartFade);
   planeMarker(st.mark);
   moveCamera(st.cam);
-  if (CINE && EMBED && !home) drift(st.c, simT);
+  if (EMBED && !home) drift(st.c, simT);
   if (st.evm && st.k > 0.6) { const h = evmText(); if (h !== lastPhase) document.getElementById('phase').innerHTML = lastPhase = h; }
   document.getElementById('pct').textContent = Math.round(progress * 100) + '%';
   document.getElementById('note').style.opacity = st.chartFade > 0.5 ? 1 : 0;
