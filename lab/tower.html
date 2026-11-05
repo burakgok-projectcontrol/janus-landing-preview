@@ -358,6 +358,12 @@ scene.add(eacBlock);
 const bacBar = new THREE.Mesh(box(18, 0.25, 9), CM.bac);
 bacBar.position.set((EV_POS.x + AC_POS.x) / 2, STACK_H, EV_POS.z);
 chart.add(bacBar);
+// The overrun: the part of the EAC block above the budget line, marked in red once the block is in place.
+const OVER_H = (STACK_H * (SCN.eac - 100)) / 100;
+const overMat = cmat('#f87171', { opacity: 0.32, emissive: '#dc2626', emissiveIntensity: 0.6, depthWrite: false });
+const overBand = new THREE.Mesh(box(7.4, OVER_H, 7.4), overMat);
+overBand.position.set(AC_POS.x, STACK_H + OVER_H / 2, AC_POS.z);
+chart.add(overBand);
 
 const labels = [];
 function label(html, pos, cls, at, parent = chart) {
@@ -376,6 +382,7 @@ label(`AC<span class="long"> · ${t('gerçekleşen maliyet', 'actual cost')}</sp
 label(`BAC<span class="long"> · ${t('bütçe', 'budget')}</span> ${pct(100)}`, new THREE.Vector3(EV_POS.x + 6, STACK_H + 1.6, EV_POS.z), 'pv', 0.62);
 label(`EAC<span class="long"> · ${t('tahmini maliyet', 'estimate at completion')}</span> ${pct(fmt(SCN.eac, 0))}`, new THREE.Vector3(AC_POS.x - 1, AC_TOP + EAC_H + 2.2, AC_POS.z + 3), 'ac', 0.93);
 label(`CPI <b>${fmt(SCN.cpi)}</b><span>${t('maliyet performansı', 'cost performance')}</span>`, new THREE.Vector3(-8, 38, 6), 'kpi warn', 0.6);
+label(`<span class="long">${t('bütçe aşımı', 'over budget')} </span>${pct(fmt(-SCN.vac, 1))}`, new THREE.Vector3(AC_POS.x - 7.5, STACK_H + OVER_H / 2, AC_POS.z + 3), 'gap', 0.95);
 label(`${t('Aşım tahmini', 'Forecast overrun')} <b>${pct(fmt(-SCN.vac, 1))}</b><span>VAC · EAC = BAC / CPI</span>`, new THREE.Vector3(-8, 27, 6), 'kpi bad', 0.95);
 
 await pause(); // start-up in slices (see warmup.js)
@@ -522,6 +529,7 @@ function setChart(k, fade) {
   for (const m of chartMats) m.opacity = m.userData.base * fade;
   acPlates.forEach((p, i) => (p.visible = k > 0.35 + (0.2 * i) / acPlates.length));
   bacBar.visible = k > 0.58;
+  overBand.visible = k > 0.94;
   for (const l of labels) { l.element.style.opacity = k >= l.userData.at ? fade : 0; l.visible = chart.visible; }
   // EAC lift: hook down at the stack's foot, lift above the stack, set it on top.
   const e = clamp01((k - 0.65) / 0.28);
@@ -562,11 +570,17 @@ function moveCamera(cam) {
   camera.lookAt(controls.target);
   if (cam <= 0) { camera.position.copy(home.p); controls.target.copy(home.t); home = null; controls.enabled = true; }
 }
-// Slow drift on the landing page: a gentle swing and a push-in as the tower rises; time stops while the chart is
-// shown and with reduced motion, so it never jumps.
+// Framing on the landing page: the camera rises with the tower (its aim follows the top floors) and turns slowly
+// around it, closer at first and pulling back as it grows. On wide screens a gentle swing is added; time stops while
+// the chart is shown and with reduced motion, so it never jumps.
 const UP = new THREE.Vector3(0, 1, 0);
+const TGT_REST = controls.target.clone();
 function drift(c, t) {
-  const off = camRest.clone().sub(controls.target).applyAxisAngle(UP, 0.08 * Math.sin(t * 0.045)).multiplyScalar(1.06 - 0.1 * c);
+  const k = smooth(clamp01(c / 0.9));
+  const top = FH * builtFloors(c);
+  controls.target.set(TGT_REST.x, THREE.MathUtils.lerp(8, TGT_REST.y, k) + 0.25 * Math.max(0, top - TGT_REST.y), TGT_REST.z);
+  const swing = CINE ? 0.08 * Math.sin(t * 0.045) : 0;
+  const off = camRest.clone().sub(TGT_REST).applyAxisAngle(UP, swing - 0.3 * (1 - k)).multiplyScalar(THREE.MathUtils.lerp(LITE ? 0.92 : 0.8, 1.04, k) - 0.06 * c);
   camera.position.copy(controls.target).add(off);
   camera.lookAt(controls.target);
 }
@@ -625,7 +639,7 @@ renderer.setAnimationLoop(() => {
   renderer.shadowMap.autoUpdate = st.fade < 0.3; // (toggling sun.castShadow would recompile every shader)
   setChart(st.k, st.chartFade);
   moveCamera(st.cam);
-  if (CINE && EMBED && !home) drift(st.c, simT);
+  if (EMBED && !home) drift(st.c, simT);
   if (st.evm && st.k > 0.6) { const h = evmText(); if (h !== lastPhase) document.getElementById('phase').innerHTML = lastPhase = h; }
   document.getElementById('pct').textContent = Math.round(progress * 100) + '%';
   document.getElementById('note').style.opacity = st.chartFade > 0.5 ? 1 : 0;

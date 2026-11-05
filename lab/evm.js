@@ -38,6 +38,16 @@ export function chartStyles() {
   document.head.appendChild(st);
 }
 
+// A soft dark panel (w × h, in the XY plane) drawn over the terrain and under a chart, so the chart reads clearly.
+// Its material's userData.base is the full opacity; the caller fades it with the chart.
+export function chartPanel(w, h) {
+  const m = new THREE.MeshBasicMaterial({ map: softPanel(), color: '#07111F', transparent: true, opacity: 0, depthTest: false, depthWrite: false, fog: false, toneMapped: false });
+  m.userData.base = 0.6;
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+  mesh.renderOrder = -0.5; // after the drawing sheet (-1), before the chart
+  return mesh;
+}
+
 // Soft-edged dark panel texture (alpha falls off towards the edges).
 function softPanel() {
   const n = 128, c = document.createElement('canvas');
@@ -113,13 +123,10 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
 
   // A soft dark panel in the chart's plane, drawn over the terrain (no depth test) and under the chart: it dims what
   // is behind and around the curves so they and their labels read clearly. It fades with the chart.
-  const panelMat = new THREE.MeshBasicMaterial({ map: softPanel(), color: '#07111F', transparent: true, opacity: 0, depthTest: false, depthWrite: false, fog: false, toneMapped: false });
-  panelMat.userData.base = 0.6;
-  mats.push(panelMat);
-  const panel = new THREE.Mesh(new THREE.PlaneGeometry(len * 1.42, height * 1.5), panelMat);
+  const panel = chartPanel(len * 1.42, height * 1.5);
+  mats.push(panel.material);
   panel.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(axis.clone().normalize(), UP, across));
   panel.position.copy(P(sc.months * 0.56, 50));
-  panel.renderOrder = -0.5; // after the drawing sheet (-1), before the chart
   g.add(panel);
 
   // Axes and 50 % / 100 % guides.
