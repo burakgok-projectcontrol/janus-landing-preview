@@ -65,6 +65,7 @@ import { createMachines } from './machines.js';
 import { createEvmChart, scenario, fmt } from './evm.js';
 import { createSheet, createBackdrop } from './sheet.js';
 import { t } from './i18n.js';
+import { warmUp, pause } from './warmup.js';
 document.getElementById('note').textContent = t('Örnek senaryo · temsilî değerler', 'Sample scenario · illustrative values');
 
 // ?embed: driven by the landing page (no own controls, progress set from outside); ?lite: lighter rendering for phones.
@@ -146,7 +147,7 @@ if (CINE && !NOPOST) {
   composer.addPass(new RenderPass(scene, camera));
   composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.78));
   composer.addPass(new OutputPass());
-  post = { render: () => composer.render(), setSize: (w, h) => { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); } };
+  post = { composer, target: composer.readBuffer, render: () => composer.render(), setSize: (w, h) => { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); } };
 }
 
 // ------------------------------------------------------------------ materials: original / maquette / blueprint
@@ -189,6 +190,7 @@ function mesh(geo, key, parent = scene) {
 }
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 
+await pause(); // start-up in slices (see warmup.js)
 // ------------------------------------------------------------------ terrain, skirt, base, contour lines
 const terrainGeo = new THREE.PlaneGeometry(SIZE_X, SIZE_Z, 85, 60).rotateX(-Math.PI / 2);
 const tp = terrainGeo.attributes.position;
@@ -242,6 +244,7 @@ function contours(geo, step) {
 }
 scene.add(contours(terrainGeo, 0.5));
 
+await pause(); // start-up in slices (see warmup.js)
 // ------------------------------------------------------------------ runway, taxiway, apron
 // Each layer is a unit-length slab stretched along x as the work front advances.
 const strip = (key, y, h, w, z) => {
@@ -267,6 +270,7 @@ const APRON = { x0: -14, x1: 42, z0: -6, z1: -15 };
 const apron = mesh(new THREE.BoxGeometry(1, 0.45, APRON.z0 - APRON.z1).translate(0.5, 0.225, 0), 'concrete');
 apron.position.set(APRON.x0, 0, (APRON.z0 + APRON.z1) / 2);
 
+await pause(); // start-up in slices (see warmup.js)
 // ------------------------------------------------------------------ terminal: columns → slabs → roof → glass
 const TERM = { x0: -46, x1: 6, z0: -18, z1: -34, floor: 5 };
 const term = new THREE.Group();
@@ -314,6 +318,7 @@ mesh(new THREE.CylinderGeometry(4, 3.6, 3, 20, 1, true), 'glass', towerCab).posi
 mesh(new THREE.CylinderGeometry(4.4, 4.4, 0.5, 20), 'slab', towerCab).position.y = 4.4;
 mesh(new THREE.CylinderGeometry(0.15, 0.15, 3, 8), 'concrete', towerCab).position.y = 6.1;
 
+await pause(); // start-up in slices (see warmup.js)
 // ------------------------------------------------------------------ machines, workers, aircraft
 const loader = new GLTFLoader();
 const mixers = [];
@@ -386,6 +391,7 @@ const mixerTruck = proc('mixer');
 mixerTruck.position.set(-6, 0, -9);
 mixerTruck.rotation.y = Math.PI;
 
+await pause(); // start-up in slices (see warmup.js)
 // ------------------------------------------------------------------ edges, look switch
 const edgeTargets = [];
 scene.traverse(o => { if (o.isMesh && !o.isSkinnedMesh && !o.userData.noEdges) edgeTargets.push(o); });
@@ -504,6 +510,7 @@ function update(c, t) {
   document.getElementById('phase').innerHTML = phaseText(c);
 }
 
+await pause(); // start-up in slices (see warmup.js)
 // ------------------------------------------------------------------ EVM: the runway becomes the time axis
 const SC = scenario({ months: 24, today: 14, rate: 12.5 / 14, cpi: 0.98 });
 const chart = createEvmChart(SC, {
@@ -620,12 +627,9 @@ function syncSize() {
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clock = new THREE.Clock();
 let simT = 0;
-// Compile every material once up front (also the ones that are still hidden, e.g. the chart), so nothing compiles mid-animation.
-// Draw it once with everything shown, so geometry and textures are on the GPU before the scene is visible.
-{ const hid = [], cull = []; scene.traverse(o => { if (!o.visible) { hid.push(o); o.visible = true; } if (o.frustumCulled) { cull.push(o); o.frustumCulled = false; } });
-  // compileAsync lets the browser build the shaders in the background (no long freeze when the scene starts).
-  await renderer.compileAsync(scene, camera); renderer.render(scene, camera); if (post) post.render();
-  hid.forEach(o => { o.visible = false; }); cull.forEach(o => { o.frustumCulled = true; }); }
+// Compile and draw every material once up front (also the ones that are still hidden, e.g. the chart), in short
+// slices, so nothing compiles mid-animation and the page never freezes for long while the scene starts.
+await warmUp(renderer, scene, camera, post);
 let lastPhase = '', warm = 0;
 renderer.setAnimationLoop(() => {
   if (window.__hidden && warm > 2) { clock.getDelta(); return; }
