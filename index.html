@@ -77,8 +77,15 @@
   p a, .foot-small a { text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; transition: color .2s, text-decoration-color .2s; }
   p a:hover, .foot-small a:hover { color: var(--cyan); text-decoration-color: var(--cyan); }
   :focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; border-radius: var(--r-sm); }
-  .skip { position: absolute; left: -999px; top: 8px; z-index: 50; background: var(--bg2); padding: 8px 14px; border-radius: var(--r); }
-  .skip:focus { left: 8px; }
+  /* Always-visible way out of the story (bottom right; top left on phones, under the header). Hidden once the content
+     is reached, but still the first stop for the keyboard. */
+  .skip { position: fixed; right: 24px; bottom: 22px; z-index: 8; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px;
+    border-radius: var(--r-sm); border: 1px solid var(--line); background: rgba(7, 17, 31, .78); color: var(--muted);
+    font: 600 var(--fs-sm)/1 var(--sans); text-decoration: none; white-space: nowrap; transition: color .2s, border-color .2s, opacity .35s; }
+  .skip:hover { color: var(--text); border-color: var(--line-strong); }
+  html:not(.story) .skip:not(:focus-visible) { opacity: 0; pointer-events: none; }
+  @media (max-width: 700px) { .skip { right: auto; left: 16px; bottom: auto; top: 62px; padding: 9px 12px; } }
+  #urun:focus { outline: none; } /* focus target of the skip link, not a control */
   html.en-pending #captions { visibility: hidden; }
 
   /* Stage: the 3D scenes live in fixed, full-screen frames behind the scrolling content. */
@@ -638,7 +645,7 @@
   </svg>
   <span class="skipnote" data-en="Click or scroll to skip">Geçmek için tıklayın veya kaydırın</span>
 </div>
-<a class="skip" href="#urun" id="skip" data-en="Skip the animation, go to content">Animasyonu atla, içeriğe geç</a>
+<a class="skip" href="#urun" id="skip"><span data-en="Skip to content">İçeriğe geç</span><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15m0 0-6-6m6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
 <header>
   <a class="brand" href="#" aria-label="Janus, sayfa başı" data-en-aria-label="Janus, top of page">
     <svg width="30" height="30" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="fut" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35C7E8"/><stop offset="1" stop-color="#3478F6"/></linearGradient></defs><path d="M50 16A44 44 0 0 0 50 104" fill="none" stroke="#e6edf7" stroke-width="13" stroke-linecap="round"/><path d="M70 16A44 44 0 0 1 70 104" fill="none" stroke="url(#fut)" stroke-width="13" stroke-linecap="round"/><circle cx="60" cy="60" r="10" fill="#ecfeff"/></svg>
@@ -736,7 +743,7 @@
       <path class="ac" d="M0 104C300 103 450 52 640 40S920 30 1010 30" />
       <path class="ev" d="M0 104C330 104 470 40 700 30S980 22 1100 22" />
     </svg>
-    <section class="sec" id="urun">
+    <section class="sec" id="urun" tabindex="-1">
       <div class="wrap">
         <p class="eyebrow reveal" data-en="One control model">Tek kontrol modeli</p>
         <h2 class="big reveal" data-en="Not instead of ERP and planning, but between them.">ERP ve planlamanın yerine değil, arasına.</h2>
@@ -1119,7 +1126,7 @@
   });
   next.addEventListener('click', forward);
   railBtns.forEach(b => b.addEventListener('click', () => jumpTo(+b.dataset.i)));
-  document.getElementById('skip').addEventListener('click', e => { e.preventDefault(); toContent(); });
+  document.getElementById('skip').addEventListener('click', e => { e.preventDefault(); toContent(); document.getElementById('urun').focus({ preventScroll: true }); });
   document.getElementById('explore').addEventListener('click', e => { e.preventDefault(); toContent(); });
   document.querySelectorAll('a[href="#iletisim"]').forEach(a => a.addEventListener('click', () => { if (mode === 'story') { mode = 'content'; root.classList.remove('story'); } }));
 
