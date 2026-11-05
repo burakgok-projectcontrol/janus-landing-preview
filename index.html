@@ -71,7 +71,7 @@
   html { scroll-behavior: smooth; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
   body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
-  h1, h2, h3 { font-family: var(--display); }
+  h1, h2, h3 { font-family: var(--display); text-wrap: balance; }
   a { color: inherit; }
   /* Links in running text: a quiet underline that turns cyan on hover. */
   p a, .foot-small a { text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; transition: color .2s, text-decoration-color .2s; }
@@ -666,7 +666,7 @@
   <div class="cap hero-cap on" data-scene="0" data-from="-1" data-to="0.3">
     <p class="eyebrow" data-en="AI-assisted project control platform for construction">Yapay zekâ destekli inşaat proje kontrol platformu</p>
     <h1 data-en="Measure the Past,&lt;br&gt;&lt;span class=&quot;grad&quot;&gt;Manage the Future&lt;/span&gt;">Geçmişi Ölç,<br><span class="grad">Geleceği Yönet</span></h1>
-    <p class="lede" data-en="JANUS brings ERP cost, the schedule and bill-of-quantities (BOQ) items into one model. The system calculates the earned-value indicators; AI interprets the variance, before the month-end report.">JANUS; ERP maliyetini, iş programını ve metraj-keşif (BOQ) kalemlerini tek modelde birleştirir. Kazanılmış değer göstergelerini sistem hesaplar, sapmayı yapay zekâ yorumlar; ay sonu raporunu beklemeden.</p>
+    <p class="lede" data-en="Janus brings ERP costs, the schedule and bill of quantities (BOQ) items into one model. The system calculates the earned value metrics and AI explains the variance, without waiting for the month-end report.">JANUS; ERP maliyetini, iş programını ve metraj-keşif (BOQ) kalemlerini tek modelde birleştirir. Kazanılmış değer göstergelerini sistem hesaplar, sapmayı yapay zekâ yorumlar; ay sonu raporunu beklemeden.</p>
     <div class="hero-cta">
       <a class="btn go" href="#iletisim" data-en="Request a Personal Demo">Kişisel Demo Talep Et</a>
       <a class="btn btn-line" id="explore" href="#urun" data-en="Explore the Platform">Platformu Keşfet</a>
@@ -694,12 +694,12 @@
   <div class="cap" data-scene="0" data-from="0.7501" data-to="1.01">
     <p class="eyebrow" data-en="Dam · completed">Baraj · tamamlandı</p>
     <h2 data-en="Ahead of plan, within budget">Planın önünde, bütçe içinde</h2>
-    <p data-en="The embankment is completed and the reservoir fills. On a project that goes well, Janus shows it with evidence.">Gövde tamamlanır, rezervuar dolar. İyi giden bir projede Janus bunu kanıtlarıyla gösterir.</p>
+    <p data-en="The embankment is completed and the reservoir fills. When a project is going well, Janus shows the evidence.">Gövde tamamlanır, rezervuar dolar. İyi giden bir projede Janus bunu kanıtlarıyla gösterir.</p>
   </div>
   <div class="cap" data-scene="1" data-from="-1" data-to="0.5001">
     <p class="eyebrow" data-en="Airport">Havalimanı</p>
     <h2 data-en="Runway, terminal and tower at once">Pist, terminal ve kule aynı anda</h2>
-    <p data-en="Different work packages progress in parallel. Janus attributes the &lt;b&gt;actual cost of each from the ERP to an activity and a BOQ item&lt;/b&gt;; lines it cannot resolve are not hidden.">Farklı iş kalemleri paralel ilerler. Janus her birinin <b>gerçekleşen maliyetini ERP'den aktiviteye ve BOQ'ya</b> atfeder; çözülemeyen satırı gizlemez.</p>
+    <p data-en="Different work packages progress in parallel. Janus attributes &lt;b&gt;each package&#x27;s actual cost from the ERP to activities and BOQ items&lt;/b&gt;; lines it cannot resolve stay visible.">Farklı iş kalemleri paralel ilerler. Janus her birinin <b>gerçekleşen maliyetini ERP'den aktiviteye ve BOQ'ya</b> atfeder; çözülemeyen satırı gizlemez.</p>
   </div>
   <div class="cap" data-scene="1" data-from="0.5001" data-to="0.7501">
     <p class="eyebrow" data-en="Measurement · Earned Schedule">Ölçüm · Earned Schedule</p>
@@ -708,7 +708,7 @@
   </div>
   <div class="cap" data-scene="1" data-from="0.7501" data-to="1.01">
     <p class="eyebrow" data-en="Airport · opening">Havalimanı · açılış</p>
-    <h2 data-en="A delay seen early can be recovered">Erken görülen gecikme toparlanır</h2>
+    <h2 data-en="A delay caught early can be recovered">Erken görülen gecikme toparlanır</h2>
     <p data-en="The runway is marked, the terminal glazed, and the first aircraft lands.">Pist işaretlenir, terminal camlanır, ilk uçak iner.</p>
   </div>
   <div class="cap" data-scene="2" data-from="-1" data-to="0.5001">
@@ -718,8 +718,8 @@
   </div>
   <div class="cap" data-scene="2" data-from="0.5001" data-to="0.7501">
     <p class="eyebrow" data-en="Measurement · EAC">Ölçüm · EAC</p>
-    <h2 data-en="At this rate, how much?">Bu gidişle ne kadar?</h2>
-    <p data-en="If earned work falls behind what is spent, the estimate at completion (&lt;b&gt;EAC&lt;/b&gt;) exceeds the budget (&lt;b&gt;BAC&lt;/b&gt;). Janus shows this today; the &lt;b&gt;AI report assistant&lt;/b&gt; explains the variance.">Kazanılan iş, harcanandan geride kalırsa tamamlanma maliyeti (<b>EAC</b>) bütçeyi (<b>BAC</b>) aşar. Janus bunu bugünden gösterir; <b>AI rapor asistanı</b> sapmayı yorumlar.</p>
+    <h2 data-en="At this rate, what will it cost?">Bu gidişle ne kadar?</h2>
+    <p data-en="If earned work falls behind what is spent, the estimate at completion (&lt;b&gt;EAC&lt;/b&gt;) exceeds the budget at completion (&lt;b&gt;BAC&lt;/b&gt;). Janus shows this now; the &lt;b&gt;AI report assistant&lt;/b&gt; explains the variance.">Kazanılan iş, harcanandan geride kalırsa tamamlanma maliyeti (<b>EAC</b>) bütçeyi (<b>BAC</b>) aşar. Janus bunu bugünden gösterir; <b>AI rapor asistanı</b> sapmayı yorumlar.</p>
   </div>
   <div class="cap" data-scene="2" data-from="0.7501" data-to="1.01">
     <p class="eyebrow" data-en="Tower · completed">Gökdelen · tamamlandı</p>
@@ -746,8 +746,8 @@
     <section class="sec" id="urun" tabindex="-1">
       <div class="wrap">
         <p class="eyebrow reveal" data-en="One control model">Tek kontrol modeli</p>
-        <h2 class="big reveal" data-en="Not instead of ERP and planning, but between them.">ERP ve planlamanın yerine değil, arasına.</h2>
-        <p class="sub reveal" data-en="Janus does not replace your ERP or planning software; it links their data in one model. The BOQ is the control object for revenue and the commercial result, the activity for time and cost attribution. Click a card to open its screen below.">Janus ERP'nin veya planlama yazılımının yerine geçmez; onlardan gelen veriyi tek modelde ilişkilendirir. BOQ gelirin ve ticari sonucun, aktivite ise zaman ve maliyet atfının kontrol nesnesidir. Bir karta tıklayın, ilgili ekran aşağıda açılsın.</p>
+        <h2 class="big reveal" data-en="Not a replacement for ERP and planning, but the layer between them.">ERP ve planlamanın yerine değil, arasına.</h2>
+        <p class="sub reveal" data-en="Janus does not replace your ERP or planning software; it links their data in one model. Revenue and the commercial result are controlled on the BOQ item; time and cost are attributed to the activity. Click a card to open its screen below.">Janus ERP'nin veya planlama yazılımının yerine geçmez; onlardan gelen veriyi tek modelde ilişkilendirir. BOQ gelirin ve ticari sonucun, aktivite ise zaman ve maliyet atfının kontrol nesnesidir. Bir karta tıklayın, ilgili ekran aşağıda açılsın.</p>
         <div class="flow reveal" role="group" aria-label="ERP ve planlama verisi JANUS'ta birleşir, çıktısı yönetim kararlarına gider" data-en-aria-label="ERP and planning data meet in JANUS; its output feeds management decisions">
           <button type="button" class="node erp" data-shot="actuals" aria-controls="showPanel"><b>ERP</b><span data-en="Actual cost">Gerçekleşen maliyet</span></button>
           <i class="wire w1" aria-hidden="true"><i></i></i>
@@ -804,7 +804,7 @@
           <ul class="ticks">
             <li class="glow reveal" style="--d:.05s" data-en="&lt;b&gt;Draft first, then approval.&lt;/b&gt; AI suggestions go to a staging area; only what you accept is applied."><b>Önce taslak, sonra onay.</b> AI önerileri bekleme alanına yazılır; kabul ettikleriniz uygulanır.</li>
             <li class="glow reveal" style="--d:.12s" data-en="&lt;b&gt;Data boundary.&lt;/b&gt; AI receives codes, descriptions, units and quantities; unit prices and amounts are not sent by default."><b>Veri sınırı.</b> AI'a kod, tanım, birim ve miktar gider; birim fiyat ve tutar varsayılan olarak gönderilmez.</li>
-            <li class="glow reveal" style="--d:.19s" data-en="&lt;b&gt;Provider-independent.&lt;/b&gt; Each company sets up its own AI connections; without one, the rule-based result still works."><b>Sağlayıcıdan bağımsız.</b> Firma kendi AI bağlantılarını tanımlar; bağlantı yoksa kural tabanlı sonuç çalışır.</li>
+            <li class="glow reveal" style="--d:.19s" data-en="&lt;b&gt;Provider-independent.&lt;/b&gt; Each company sets up its own AI connections; without one, the rule-based results still work."><b>Sağlayıcıdan bağımsız.</b> Firma kendi AI bağlantılarını tanımlar; bağlantı yoksa kural tabanlı sonuç çalışır.</li>
           </ul>
         </div>
         <div class="ai-shot reveal">
@@ -849,7 +849,7 @@
               </div>
             </div>
           </div>
-          <p class="aif-foot" data-en="Sample answer built from the sample project&#x27;s figures. Every number comes from the system; in the period report AI cannot write a digit, the server fills them in.">Örnek proje verisinden kurulmuş örnek yanıt. Her rakam sistemden gelir; dönem raporunda AI rakam yazamaz, rakamları sunucu yerleştirir.</p>
+          <p class="aif-foot" data-en="Sample answer built from the sample project&#x27;s figures. Every number comes from the system; in the period report, AI cannot write a single figure; the server fills them in.">Örnek proje verisinden kurulmuş örnek yanıt. Her rakam sistemden gelir; dönem raporunda AI rakam yazamaz, rakamları sunucu yerleştirir.</p>
         </div>
       </div>
     </section>
@@ -857,7 +857,7 @@
     <section class="sec sec-lay">
       <div class="wrap">
         <p class="eyebrow reveal" data-en="Security">Güvenlik</p>
-        <h2 class="big reveal" data-en="Your data stays your company&#x27;s.">Verileriniz firmanıza özel.</h2>
+        <h2 class="big reveal" data-en="Your data stays within your company.">Verileriniz firmanıza özel.</h2>
         <div class="lay-grid">
           <svg class="lay-fig reveal" viewBox="0 0 440 320" role="img" aria-label="Üç katman: firma izolasyonu, rol bazlı yetki, denetim kaydı" data-en-aria-label="Three layers: company isolation, role-based permissions, audit log">
             <rect class="lay l1" x="6" y="6" width="428" height="308" rx="6"/>
@@ -869,7 +869,7 @@
           <ol class="lay-list">
             <li class="reveal" style="--d:0.05s" data-lay="1"><span class="num" aria-hidden="true">01</span><div><h3 data-en="Company isolation">Firma izolasyonu</h3><p data-en="Each company&#x27;s data is separated in the application and in the database with row-level security (RLS).">Her firmanın verisi uygulamada ve veritabanında satır düzeyi güvenlikle (RLS) ayrılır.</p></div></li>
             <li class="reveal" style="--d:0.15s" data-lay="2"><span class="num" aria-hidden="true">02</span><div><h3 data-en="Role-based permissions">Rol bazlı yetki</h3><p data-en="Screen- and action-level permissions through company roles and project-level exceptions.">Firma rolleri ve proje bazlı istisnalarla ekran ve işlem düzeyinde yetki.</p></div></li>
-            <li class="reveal" style="--d:0.25s" data-lay="3"><span class="num" aria-hidden="true">03</span><div><h3 data-en="Audit log">Denetim kaydı</h3><p data-en="Important actions and permission changes are recorded with user and time.">Önemli işlemler ve yetki değişiklikleri kullanıcı ve zamanıyla kayıt altında.</p></div></li>
+            <li class="reveal" style="--d:0.25s" data-lay="3"><span class="num" aria-hidden="true">03</span><div><h3 data-en="Audit log">Denetim kaydı</h3><p data-en="Important actions and permission changes are logged with the user and a timestamp.">Önemli işlemler ve yetki değişiklikleri kullanıcı ve zamanıyla kayıt altında.</p></div></li>
           </ol>
         </div>
       </div>
@@ -878,7 +878,7 @@
     <section class="sec why-sec">
       <div class="wrap">
         <p class="eyebrow reveal" data-en="Why Janus?">Neden Janus?</p>
-        <p class="why-lead reveal" data-en="Janus, the Roman god with one face looking to the past and one to the future, is the symbol of that unique vision. Being at the wheel of project control takes exactly this dynamism:">Roma tanrısı Janus, bir yüzü geçmişe bir yüzü geleceğe bakan o eşsiz vizyonun simgesidir. Proje kontrolünün direksiyonunda olmak da tam olarak bu dinamizmi gerektirir:</p>
+        <p class="why-lead reveal" data-en="Janus, the Roman god with one face looking to the past and one to the future, stands for exactly this vision. Being at the wheel of project control takes the same dynamism:">Roma tanrısı Janus, bir yüzü geçmişe bir yüzü geleceğe bakan o eşsiz vizyonun simgesidir. Proje kontrolünün direksiyonunda olmak da tam olarak bu dinamizmi gerektirir:</p>
         <div class="why-grid">
           <div class="why-side past reveal">
             <span class="tag" data-en="One eye">Bir gözünüz</span>
@@ -892,7 +892,7 @@
             <p data-en="on the risks ahead and the big goal!">rotadaki risklerde ve büyük hedefte!</p>
           </div>
         </div>
-        <p class="why-close reveal" data-en="In a project that measures the past without interruption and reads tomorrow from today, there is no room for uncertainty.">Geçmişi kesintisiz ölçen ve yarını bugünden okuyan bir projede, belirsizliklere yer kalmaz.</p>
+        <p class="why-close reveal" data-en="When a project measures the past continuously and reads tomorrow from today, there is no room for uncertainty.">Geçmişi kesintisiz ölçen ve yarını bugünden okuyan bir projede, belirsizliklere yer kalmaz.</p>
       </div>
     </section>
 
@@ -901,7 +901,7 @@
         <div class="demo-copy">
           <p class="eyebrow" data-en="Personal demo">Kişisel demo</p>
           <h2 class="big" data-en="Let&#x27;s look at your projects together.">Projelerinizde birlikte bakalım.</h2>
-          <p class="sub" data-en="We will show Janus with the structure of your own project data. Your name, company and job title are enough; add a short note if you like.">Janus'u kendi proje verinizin yapısına göre gösterelim. Adınız, şirketiniz ve unvanınız yeterli; isterseniz kısa bir not ekleyin.</p>
+          <p class="sub" data-en="We&#x27;ll show you Janus built around the structure of your own project data. Your name, company and job title are enough; add a short note if you like.">Janus'u kendi proje verinizin yapısına göre gösterelim. Adınız, şirketiniz ve unvanınız yeterli; isterseniz kısa bir not ekleyin.</p>
           <p class="cta-mail" data-en="or write to us directly: &lt;a href=&quot;mailto:diprojectcontrol@gmail.com&quot;&gt;diprojectcontrol@gmail.com&lt;/a&gt;">veya doğrudan yazın: <a href="mailto:diprojectcontrol@gmail.com">diprojectcontrol@gmail.com</a></p>
         </div>
         <form class="demo-form" id="demoForm" novalidate>
@@ -942,7 +942,7 @@
             <button class="btn" type="submit" id="df-send" data-en="Request a Personal Demo">Kişisel Demo Talep Et</button>
           </div>
           <p class="f-status wide" id="df-status" role="status" aria-live="polite"></p>
-          <p class="f-note wide" data-en="* Required.">* Zorunlu alan.</p>
+          <p class="f-note wide" data-en="* Required field.">* Zorunlu alan.</p>
         </form>
       </div>
     </section>
