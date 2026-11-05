@@ -167,7 +167,8 @@
   @media (prefers-reduced-motion: reduce) { .after::before { animation: none; } .reveal { opacity: 1; transform: none; } .glow { transition: none; } }
 
   /* Product screens: tabs switch one large, flat screenshot; a click opens it at full size. */
-  .show { margin-bottom: 40px; scroll-margin-top: 76px; }
+  /* Wider than the text column on large screens (up to 1280 px), so the screens stay readable. */
+  .show { margin-bottom: 40px; scroll-margin-top: 76px; margin-inline: calc(50% - min(640px, 50vw - 24px)); }
   .show-tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
   .show-tabs button { all: unset; cursor: pointer; padding: 12px 13px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 600; font-size: .9rem; transition: color .2s, border-color .2s; }
   .show-tabs button:hover { color: var(--text); }
@@ -176,10 +177,23 @@
   .show-text { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.6fr); gap: 8px 32px; align-items: baseline; margin-bottom: 18px; min-height: 3.4em; }
   .show-text h3 { margin: 0; font-size: 1.3rem; }
   .show-text p { margin: 0; color: var(--muted); }
-  .show-img { all: unset; display: block; box-sizing: border-box; width: 100%; cursor: zoom-in; border: 1px solid rgba(53, 199, 232, .45); border-radius: 4px; overflow: hidden; background: #fff; box-shadow: 0 30px 70px -34px rgba(0, 0, 0, .8); }
+  .show-text .benefit { margin-top: 8px; color: var(--text); }
+  .show-text .benefit b { font: 600 .74rem/1 ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: #fcd34d; margin-right: 8px; }
+  .show-img { all: unset; position: relative; display: block; box-sizing: border-box; width: 100%; cursor: zoom-in; border: 1px solid rgba(53, 199, 232, .45); border-radius: 4px; overflow: hidden; background: #fff; box-shadow: 0 30px 70px -34px rgba(0, 0, 0, .8); }
   .show-img:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
   .show-img img { display: block; width: 100%; height: auto; transition: opacity .3s ease, transform .6s ease; }
   .show-img img.swap { opacity: 0; transform: scale(1.015); }
+  /* Focus: after a screen appears, a frame settles on its key area, the rest dims slightly and the image eases in
+     towards it. Pointing at the screen lifts the focus so the whole screen can be read. Only on the large tab view. */
+  .show-img .shot-in { display: block; position: relative; transform-origin: var(--ox, 50%) var(--oy, 50%); transition: scale 1.4s cubic-bezier(.2, .7, .2, 1); }
+  .show-img.focus .shot-in { scale: 1.025; }
+  .show-img .focus-box { position: absolute; z-index: 1; pointer-events: none; opacity: 0; border: 2px solid var(--cyan); border-radius: 3px;
+    box-shadow: 0 0 0 100vmax rgba(7, 17, 31, .32); transform: scale(1.04); transition: opacity .5s ease, transform .9s cubic-bezier(.2, .7, .2, 1); }
+  .show-img.focus .focus-box { opacity: 1; transform: none; }
+  .show-img .focus-box em { position: absolute; left: -2px; bottom: 100%; margin-bottom: 6px; white-space: nowrap; font: 600 .78rem/1 ui-monospace, "Cascadia Mono", Consolas, monospace; font-style: normal; letter-spacing: .04em; color: #07111F; background: var(--cyan); padding: 6px 9px; border-radius: 2px; }
+  .show-img .focus-box.low em { bottom: auto; top: 100%; margin: 6px 0 0; }
+  .show-img.focus:hover .focus-box { opacity: 0; }
+  .show-img.focus:hover .shot-in { scale: 1; }
   .show-cap { margin: 12px 0 0; color: var(--muted); font-size: .86rem; }
   .show-cap b { color: var(--text); }
   #shotDlg { padding: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--text); max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow: auto; }
@@ -192,6 +206,16 @@
     .show-text { grid-template-columns: 1fr; }
     #shotDlg img { width: 1200px; }
   }
+  /* Phones: the full screen would be too small to read, so the panel shows the key area at a legible size
+     (--mx/--my/--mw/--mh in % of the screenshot); a tap still opens the whole screen. */
+  @media (max-width: 700px) {
+    .show-panel .show-img { aspect-ratio: calc(var(--mw, 100) * 1.6 / var(--mh, 100)); }
+    .show-img .shot-in { position: absolute; left: 0; top: 0; width: calc(100% * 100 / var(--mw, 100));
+      translate: calc(-1% * var(--mx, 0)) calc(-1% * var(--my, 0)); }
+    .show-img.focus .shot-in, .show-img.focus:hover .shot-in { scale: 1; }
+    .show-img .focus-box { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .show-img .focus-box, .show-img .shot-in { transition: none; } .show-img.focus .shot-in { scale: 1; } }
   @media (prefers-reduced-motion: reduce) { .show-img img { transition: none; } }
   /* ERP – JANUS – planning – decisions: ERP actual cost and the plan flow into JANUS; indicators, alerts and reports
      come out as the basis for decisions. The lines draw in when the block comes into view (inputs first, then the
@@ -541,20 +565,27 @@
             <button type="button" role="tab" id="tab-dashboard" aria-controls="showPanel" aria-selected="false" tabindex="-1" data-shot="dashboard" data-en="Dashboard and reports">Dashboard ve raporlar</button>
           </div>
           <div class="show-panel" id="showPanel" role="tabpanel" aria-labelledby="tab-mapping">
-            <div class="show-text"><h3 id="showTitle"></h3><p id="showDesc"></p></div>
+            <div class="show-text"><h3 id="showTitle"></h3><div><p id="showDesc"></p><p class="benefit" id="showBenefit"></p></div></div>
             <button class="show-img" type="button" id="showZoom" aria-label="Ekranı tam boyutta aç" data-en-aria-label="Open the screen at full size">
-              <img id="showImg" src="assets/screens/tr/mapping.webp" srcset="assets/screens/tr/mapping-sm.webp 800w, assets/screens/tr/mapping.webp 1600w" sizes="(max-width: 1152px) calc(100vw - 32px), 1120px" width="1600" height="1000" loading="lazy" decoding="async" alt="">
+              <span class="shot-in"><span class="focus-box" id="showFocus" aria-hidden="true"><em></em></span>
+              <img id="showImg" src="assets/screens/tr/mapping.webp" srcset="assets/screens/tr/mapping-sm.webp 800w, assets/screens/tr/mapping.webp 1600w" sizes="(max-width: 700px) 250vw, (max-width: 1328px) calc(100vw - 48px), 1280px" width="1600" height="1000" loading="lazy" decoding="async" alt=""></span>
             </button>
-            <p class="show-cap" data-en="Sample project data: Port of İzmir Expansion (sample). Click the screen to open it at full size.">Örnek proje verisi: İzmir Limanı Genişletme (örnek). Tam boyut için ekrana tıklayın.</p>
+            <p class="show-cap" data-en="Sample project data: Port of İzmir Expansion (sample). Click the screen to see all of it at full size.">Örnek proje verisi: İzmir Limanı Genişletme (örnek). Tam ekranı görmek için ekrana tıklayın.</p>
           </div>
         </div>
         <div hidden id="showData">
-          <p data-shot="mapping" data-en="Each BOQ item is linked to one or more activities with weights; unmapped and double-counted amounts are reported separately.">Her BOQ kalemi bir veya birkaç aktiviteye ağırlıkla bağlanır; eşlenmemiş ve çift sayılan tutarlar ayrıca raporlanır.</p>
-          <p data-shot="ai-plan" data-en="Proposes a WBS (work breakdown structure), activities and a CBS (cost breakdown structure) from the BOQ; nothing goes live until you approve it.">BOQ'dan iş kırılımı (WBS), aktivite ve CBS (maliyet kırılım yapısı) önerisi; siz onaylamadan hiçbir şey canlıya geçmez.</p>
-          <p data-shot="budget" data-en="Budget and revenue are spread over activity durations; the baseline (approved reference plan) is frozen and variance is always measured against it.">Bütçe ve gelir aktivite süresine yayılır; baseline (onaylı referans plan) donar, sapma hep ona göre ölçülür.</p>
-          <p data-shot="actuals" data-en="Actual cost is linked to activities and BOQ items; timesheets and allocation keys bring indirect costs down to activities.">Gerçekleşen maliyet aktiviteye ve BOQ'ya bağlanır; puantaj ve dağıtım anahtarlarıyla endirekt giderler aktivitelere iner.</p>
-          <p data-shot="evm" data-en="CPI, SPI, Earned Schedule and EAC; when a threshold is crossed, a rule-based alert with its location and a suggested action.">CPI, SPI, Earned Schedule ve EAC; eşik aşıldığında kural tabanlı uyarı, yeri ve önerilen aksiyonla.</p>
-          <p data-shot="dashboard" data-en="S-curve and indicators, the AI report assistant and the approved period report, with PDF export.">S-eğrisi ve göstergeler, AI rapor asistanı ve onaylı dönem raporu; PDF çıktısıyla.</p>
+          <p data-shot="mapping" data-f="16 21 83 12" data-m="16 20 42 46" data-label="Eşleme kontrolleri" data-en-data-label="Mapping checks" data-en="Each BOQ item is linked to one or more activities with weights; unmapped and double-counted amounts are reported separately.">Her BOQ kalemi bir veya birkaç aktiviteye ağırlıkla bağlanır; eşlenmemiş ve çift sayılan tutarlar ayrıca raporlanır.</p>
+          <p data-benefit="mapping" data-en="Revenue and cost are tracked from the same BOQ item; unmapped amounts are visible instead of leaking into reports.">Gelir ve maliyet aynı BOQ kaleminden izlenir; eşlenmemiş tutar raporlara karışmadan görünür.</p>
+          <p data-shot="ai-plan" data-f="17 21 82 46" data-m="16 17 42 46" data-label="AI plan önerisi" data-en-data-label="AI plan proposal" data-en="Proposes a WBS (work breakdown structure), activities and a CBS (cost breakdown structure) from the BOQ; nothing goes live until you approve it.">BOQ'dan iş kırılımı (WBS), aktivite ve CBS (maliyet kırılım yapısı) önerisi; siz onaylamadan hiçbir şey canlıya geçmez.</p>
+          <p data-benefit="ai-plan" data-en="You start the control plan from a proposal derived from the BOQ, not from a blank page; the final decision stays with you.">Kontrol planını boş sayfadan değil, BOQ'dan türetilmiş bir öneriden başlatırsınız; son karar sizde kalır.</p>
+          <p data-shot="budget" data-f="16 16 83 13" data-m="16 16 42 46" data-label="Planlanan maliyet ve gelir" data-en-data-label="Planned cost and revenue" data-en="Budget and revenue are spread over activity durations; the baseline (approved reference plan) is frozen and variance is always measured against it.">Bütçe ve gelir aktivite süresine yayılır; baseline (onaylı referans plan) donar, sapma hep ona göre ölçülür.</p>
+          <p data-benefit="budget" data-en="Variance is measured against the approved baseline, not a plan that keeps changing; cost and revenue share one timeline.">Sapma, sonradan değişen bir plana göre değil, onaylı baseline'a göre ölçülür; maliyet ve gelir aynı takvimde görünür.</p>
+          <p data-shot="actuals" data-f="16 15 83 23" data-m="16 15 42 40" data-label="Atıf ve çift sayım kontrolü" data-en-data-label="Attribution and double-count check" data-en="Actual cost is linked to activities and BOQ items; timesheets and allocation keys bring indirect costs down to activities.">Gerçekleşen maliyet aktiviteye ve BOQ'ya bağlanır; puantaj ve dağıtım anahtarlarıyla endirekt giderler aktivitelere iner.</p>
+          <p data-benefit="actuals" data-en="ERP cost lines land on activities and BOQ items; unresolved or double-counted amounts are never hidden.">ERP'deki maliyet satırları aktiviteye ve BOQ kalemine iner; çözülemeyen veya çift sayılan tutar gizlenmez.</p>
+          <p data-shot="evm" data-f="16 21 83 43" data-m="16 21 44 44" data-label="CPI, SPI ve EAC tahmini" data-en-data-label="CPI, SPI and the EAC forecast" data-en="CPI, SPI, Earned Schedule and EAC; when a threshold is crossed, a rule-based alert with its location and a suggested action.">CPI, SPI, Earned Schedule ve EAC; eşik aşıldığında kural tabanlı uyarı, yeri ve önerilen aksiyonla.</p>
+          <p data-benefit="evm" data-en="Where the project will land at this rate (EAC) and how far behind schedule it is, on one screen; crossing a threshold raises an alert.">Projenin bu gidişle nereye varacağı (EAC) ve takvimde ne kadar geride olduğu aynı ekranda; eşik aşılınca uyarı gelir.</p>
+          <p data-shot="dashboard" data-f="66 63 33 37" data-m="66 63 34 37" data-label="Kural tabanlı uyarılar" data-en-data-label="Rule-based alerts" data-en="S-curve and indicators, the AI report assistant and the approved period report, with PDF export.">S-eğrisi ve göstergeler, AI rapor asistanı ve onaylı dönem raporu; PDF çıktısıyla.</p>
+          <p data-benefit="dashboard" data-en="Managers see revenue, profitability, forecast and alerts on one screen; the approved period report is shared as a PDF.">Yönetici gelir, kârlılık, tahmin ve uyarıları tek ekranda görür; onaylı dönem raporu PDF olarak paylaşılır.</p>
         </div>
         <ul class="chips reveal">
           <li data-en="Subcontractor management">Taşeron yönetimi</li><li data-en="Granular permissions">Granüler yetki</li><li data-en="Guided tours">Rehberli turlar</li><li data-en="Turkish / English">Türkçe / İngilizce</li><li data-en="Local currency + USD">Yerel para + USD</li><li data-en="Excel import/export">Excel içe/dışa aktarma</li>
@@ -973,20 +1004,32 @@
   const panel = document.getElementById('showPanel'), dlg = document.getElementById('shotDlg'), dlgImg = dlg.querySelector('img');
   const lang = () => (window.__lang === 'en' ? 'en' : 'tr');
   const files = shot => ({ src: `assets/screens/${lang()}/${shot}.webp`, srcset: `assets/screens/${lang()}/${shot}-sm.webp 800w, assets/screens/${lang()}/${shot}.webp 1600w` });
-  let active = 0;
+  const benefit = document.getElementById('showBenefit'), zoomBtn = document.getElementById('showZoom'), focusBox = document.getElementById('showFocus');
+  let active = 0, focusTimer = 0;
   function show(i, focus) {
     active = i;
     tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
     const t = tabs[i], f = files(t.dataset.shot);
     panel.setAttribute('aria-labelledby', t.id);
     title.innerHTML = t.innerHTML;
-    desc.innerHTML = document.querySelector(`#showData [data-shot="${t.dataset.shot}"]`).innerHTML;
+    const d = document.querySelector(`#showData [data-shot="${t.dataset.shot}"]`);
+    desc.innerHTML = d.innerHTML;
+    benefit.innerHTML = `<b>${lang() === 'en' ? 'Benefit' : 'Fayda'}</b>${document.querySelector(`#showData [data-benefit="${t.dataset.shot}"]`).innerHTML}`;
+    // Key area of the screen: framed on wide screens, cropped to on phones.
+    const [fx, fy, fw, fh] = d.dataset.f.split(' ').map(Number), [mx, my, mw, mh] = d.dataset.m.split(' ').map(Number);
+    zoomBtn.classList.remove('focus');
+    clearTimeout(focusTimer);
+    Object.assign(focusBox.style, { left: fx + '%', top: fy + '%', width: fw + '%', height: fh + '%' });
+    focusBox.classList.toggle('low', fy < 12);
+    focusBox.firstChild.textContent = d.dataset.label;
+    zoomBtn.style.cssText = `--ox:${fx + fw / 2}%;--oy:${fy + fh / 2}%;--mx:${mx};--my:${my};--mw:${mw};--mh:${mh}`;
+    const settle = () => { focusTimer = setTimeout(() => zoomBtn.classList.add('focus'), reduced ? 0 : 450); };
     const alt = `${t.textContent}: ${lang() === 'en' ? 'Janus screen, sample project data' : 'Janus ekranı, örnek proje verisi'}`;
-    if (img.getAttribute('src') === f.src) { img.alt = alt; }
+    if (img.getAttribute('src') === f.src) { img.alt = alt; settle(); }
     else {
       if (!reduced) img.classList.add('swap');
       const pre = new Image(); pre.sizes = img.sizes; pre.srcset = f.srcset; pre.src = f.src;
-      const apply = () => { img.srcset = f.srcset; img.src = f.src; img.alt = alt; requestAnimationFrame(() => img.classList.remove('swap')); };
+      const apply = () => { img.srcset = f.srcset; img.src = f.src; img.alt = alt; requestAnimationFrame(() => img.classList.remove('swap')); settle(); };
       (pre.decode ? pre.decode() : Promise.resolve()).then(apply, apply);
     }
     if (focus) t.focus();
@@ -1017,6 +1060,8 @@
     document.querySelectorAll('img[data-langsrc]').forEach(im => { const f = files(im.dataset.langsrc); im.srcset = f.srcset; im.src = f.src; });
   };
   window.__showFeature();
+  // Replay the focus when the screen comes into view, so it is seen rather than played off screen.
+  new IntersectionObserver(es => { if (es[0].isIntersecting) show(active); }, { threshold: 0.4 }).observe(zoomBtn);
 })();
 </script>
 <script>
