@@ -443,6 +443,17 @@
   .flow.live .w3 > i::before { animation-name: flowY; }
   .flow .w3::after { top: auto; bottom: -1px; right: -5px; border: 6px solid transparent; border-top: 8px solid var(--cyan); border-bottom: 0; }
   .flow.in .w3 { transform: scaleY(1); }
+  /* A sample cost line travels through the diagram: an ERP line enters Janus, is attributed to a BOQ item, the
+     indicators are calculated, and a CPI value reaches the decisions box. Same sample data as the AI section. */
+  .flow { position: relative; }
+  .flow .trip { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; white-space: nowrap; opacity: 0;
+    font: 600 var(--fs-xs)/1 var(--mono); letter-spacing: .02em; color: var(--text); background: #0b1a2c; padding: 6px 9px;
+    border: 1px solid var(--cyan); border-radius: var(--r-sm); box-shadow: 0 0 18px rgba(53, 199, 232, .45); }
+  .flow .trip.kpi { color: var(--amber-hi); border-color: var(--amber); box-shadow: 0 0 18px rgba(251, 191, 36, .45); }
+  .flow .core .calc i { transition: background .3s, color .3s, border-color .3s, box-shadow .3s; }
+  .flow .core .calc i.hit { background: var(--cyan); border-color: var(--cyan); color: #07111F; box-shadow: 0 0 16px rgba(53, 199, 232, .6); }
+  .flow .dec { transition: opacity .6s ease 1.5s, transform .6s ease 1.5s, border-color .25s, background .25s, box-shadow .4s; }
+  .flow .dec.alert { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber), 0 0 42px rgba(251, 191, 36, .32); }
   @keyframes flowX { 0% { transform: translateX(-100%); opacity: 0; } 15%, 85% { opacity: 1; } 100% { transform: translateX(280%); opacity: 0; } }
   @keyframes flowY { 0% { transform: translateY(-100%); opacity: 0; } 15%, 85% { opacity: 1; } 100% { transform: translateY(280%); opacity: 0; } }
   @media (max-width: 860px) {
@@ -1330,6 +1341,68 @@
   if (!reduced) io.observe(box.querySelector('.aif-panel'));
   // Language change: keep the report status in the chosen language.
   new MutationObserver(() => setStatus(rep.classList.contains('ok'))).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+})();
+</script>
+<script>
+// ERP diagram: one sample cost line's trip (ERP → Janus → attributed to BOQ 04.01.01 → indicators → CPI 0,90 →
+// management decisions). Plays when the diagram comes into view, at most every 9 s; not with reduced motion.
+(() => {
+  const flow = document.querySelector('.flow');
+  if (!flow || matchMedia('(prefers-reduced-motion: reduce)').matches || !Element.prototype.animate) return;
+  const q = s => flow.querySelector(s);
+  const core = q('.core'), dec = q('.dec'), w1 = q('.w1'), w3 = q('.w3');
+  const calc = [...core.querySelectorAll('.calc i')];
+  const chip = Object.assign(document.createElement('span'), { className: 'trip' });
+  const kpi = Object.assign(document.createElement('span'), { className: 'trip kpi' });
+  [chip, kpi].forEach(c => { c.setAttribute('aria-hidden', 'true'); flow.append(c); });
+  const L = (tr, en) => (window.__lang === 'en' ? en : tr);
+  // Centre of an element, relative to the diagram.
+  const at = (el, fy = 0.5) => { const f = flow.getBoundingClientRect(), r = el.getBoundingClientRect(); return [r.left - f.left + r.width / 2, r.top - f.top + r.height * fy]; };
+  // Ends of a wire (horizontal on wide screens, vertical on phones).
+  const ends = w => { const f = flow.getBoundingClientRect(), r = w.getBoundingClientRect(), x = r.left - f.left, y = r.top - f.top;
+    return r.width >= r.height ? [[x, y + r.height / 2], [x + r.width, y + r.height / 2]] : [[x + r.width / 2, y], [x + r.width / 2, y + r.height]]; };
+  const pos = ([x, y], s = 1) => ({ transform: `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${s})` });
+  let timers = [], last = -1e9;
+  const later = (ms, fn) => timers.push(setTimeout(fn, ms));
+  function play() {
+    timers.forEach(clearTimeout); timers = [];
+    [chip, kpi].forEach(c => c.getAnimations().forEach(a => a.cancel()));
+    calc.forEach(c => c.classList.remove('hit')); dec.classList.remove('alert');
+    // 1. A raw ERP line leaves the ERP box and travels along the wire into Janus.
+    chip.textContent = L('ERP · kazık temini faturası', 'ERP · pile supply invoice');
+    const [a, b] = ends(w1), c = at(core, 0.35);
+    chip.animate([
+      { ...pos(a, .8), opacity: 0 }, { ...pos(a), opacity: 1, offset: .15 },
+      { ...pos(b), opacity: 1, offset: .55 }, { ...pos(c), opacity: 1, offset: .88 }, { ...pos(c, .9), opacity: 1 },
+    ], { duration: 1500, easing: 'cubic-bezier(.45, 0, .3, 1)', fill: 'forwards' });
+    // 2. In Janus it is attributed: the chip becomes the BOQ item and merges into the BOQ · activity tag.
+    later(1500, () => {
+      chip.textContent = 'BOQ 04.01.01';
+      const t = at(calc[0]);
+      chip.animate([{ ...pos(c, .9), opacity: 1 }, { ...pos(c, 1.05), opacity: 1, offset: .3 }, { ...pos(t, .7), opacity: 0 }],
+        { duration: 700, easing: 'cubic-bezier(.5, 0, .3, 1)', fill: 'forwards' });
+    });
+    // 3. The indicators are calculated, one after the other.
+    calc.forEach((el, i) => { later(2100 + i * 380, () => el.classList.add('hit')); later(2100 + i * 380 + 900, () => el.classList.remove('hit')); });
+    // 4. The result leaves Janus downwards and reaches the decisions box, which raises an alert.
+    later(3300, () => {
+      kpi.textContent = L('CPI 0,90', 'CPI 0.90');
+      const [s0, s1] = ends(w3), s2 = at(dec, 0.3);
+      kpi.animate([{ ...pos(s0, .8), opacity: 0 }, { ...pos(s0), opacity: 1, offset: .15 }, { ...pos(s1), opacity: 1, offset: .55 }, { ...pos(s2), opacity: 1, offset: .85 }, { ...pos(s2, .9), opacity: 0 }],
+        { duration: 1300, easing: 'cubic-bezier(.45, 0, .3, 1)', fill: 'forwards' });
+    });
+    later(4350, () => dec.classList.add('alert'));
+    later(6200, () => dec.classList.remove('alert'));
+  }
+  new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    const now = performance.now();
+    if (now - last < 9000) return;
+    last = now;
+    // First time: wait until the wires have been drawn.
+    later(last === now && !flow.dataset.played ? 1700 : 300, play);
+    flow.dataset.played = '1';
+  }), { threshold: 0.6 }).observe(flow);
 })();
 </script>
 <script>
