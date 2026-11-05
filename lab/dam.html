@@ -196,6 +196,7 @@ if (CINE) {
   ripples = rippleNormals();
   Object.assign(M.water[2], { normalMap: ripples, normalScale: new THREE.Vector2(0.18, 0.18), roughness: 0.12, metalness: 0.25 });
 }
+M.settle = M.active.map(m => m.clone());
 const IDX = { orig: 0, maq: 1, bp: 2 };
 let MODE = 'bp';
 function mesh(geo, key) {
@@ -521,27 +522,38 @@ function stage(P) {
   return { c: C_TODAY + ((1 - C_TODAY) * (P - T.evmOut)) / (1 - T.evmOut), cam: 0, fade: 0, fly: 0, k: 0, chartFade: 0, evm: false };
 }
 
-// Built lifts fly (staggered, on an arc) into the monthly columns and dissolve there.
+// Built lifts fly (staggered, on an arc) to the monthly columns: the lifts given to a month stack up into that
+// month's column, bottom lift first, so the dam is visibly rebuilt as the chart. They dissolve into the chart's
+// column once they have landed.
 function flyLifts(fly) {
   const built = lifts.filter(m => m.visible);
   const nCols = chart.cols.length;
+  const colOf = i => Math.min(nCols - 1, Math.floor((i * nCols) / built.length));
+  const perCol = new Array(nCols).fill(0);
+  built.forEach((m, i) => perCol[colOf(i)]++);
+  const seen = new Array(nCols).fill(0);
   built.forEach((m, i) => {
     const y0 = lifts.indexOf(m) * LIFT;
-    const fi = smooth(clamp01(fly * 1.7 - (i / built.length) * 0.7));
+    const fi = smooth(clamp01(fly * 1.6 - (i / built.length) * 0.6));
+    const c = colOf(i), j = seen[c]++;
     m.position.set(0, y0, 0);
+    m.rotation.y = 0;
     m.scale.x = m.scale.z = 1;
     m.castShadow = fi <= 0;
     if (fi <= 0) return;
-    const col = chart.cols[Math.min(nCols - 1, Math.floor((i * nCols) / built.length))];
+    const col = chart.cols[c];
+    const seg = col.userData.h / perCol[c]; // this lift's share of the column height
     const bb = m.geometry.boundingBox;
     const size = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
-    const tScale = new THREE.Vector3(1.4 / size.x, 0.5 / LIFT, 1.6 / size.z);
-    const tTop = col.position.clone().setY(CH.y0 + col.userData.h);
-    const tPos = tTop.sub(new THREE.Vector3(ctr.x * tScale.x, LIFT * tScale.y, ctr.z * tScale.z));
-    m.position.lerp(tPos, fi).add(new THREE.Vector3(0, Math.sin(Math.PI * fi) * 10, 0));
+    const tScale = new THREE.Vector3(1.4 / size.x, Math.max(seg, 0.05) / LIFT, 1.6 / size.z);
+    const tBottom = col.position.clone().setY(CH.y0 + seg * j);
+    const tPos = tBottom.sub(new THREE.Vector3(ctr.x * tScale.x, 0, ctr.z * tScale.z));
+    const arc = 6 + 8 * (1 - i / built.length); // early lifts travel further, so they arc higher
+    m.position.lerp(tPos, fi).add(new THREE.Vector3(0, Math.sin(Math.PI * fi) * arc, 0));
+    m.rotation.y = Math.sin(Math.PI * fi) * 0.18;
     m.scale.set(THREE.MathUtils.lerp(1, tScale.x, fi), THREE.MathUtils.lerp(m.scale.y, tScale.y, fi), THREE.MathUtils.lerp(1, tScale.z, fi));
     m.material = m.userData.fly;
-    m.material.opacity = 0.9 * (1 - smooth(clamp01((fi - 0.8) / 0.2)));
+    m.material.opacity = 0.9 * (1 - smooth(clamp01((fi - 0.86) / 0.14)));
   });
 }
 
@@ -582,13 +594,21 @@ function update(p, t) {
   const h = fillH(p);
   const n = Math.floor(h / LIFT);
   const frac = h / LIFT - n;
+  // The lift placed last settles during the first 35 % of the next one: bright → earth colour, 6 % → 0 % higher.
+  const settleK = p < 0.85 && n > 0 ? clamp01(frac / 0.35) : 1;
   lifts.forEach((m, i) => {
     const active = i === n && frac > 0.001 && p < 0.85;
+    const settling = i === n - 1 && settleK < 1;
     m.visible = i < n || active || (i === n && p >= 0.85);
-    const s = active ? frac : 1;
-    m.scale.y = s;
-    m.userData.mat = active ? 'active' : m.userData.base;
+    m.scale.y = active ? frac : settling ? 1 + 0.06 * (1 - smooth(settleK)) : 1;
+    m.userData.mat = active ? 'active' : settling ? 'settle' : m.userData.base;
     m.material = M[m.userData.mat][IDX[MODE]];
+    if (settling) {
+      const e = 1 - smooth(settleK), base = M[m.userData.base][IDX[MODE]], hot = M.active[IDX[MODE]];
+      m.material.color.lerpColors(base.color, hot.color, e);
+      m.material.emissive.copy(hot.emissive);
+      m.material.emissiveIntensity = 1.1 * e;
+    }
   });
   crest.visible = p >= 0.86;
 
