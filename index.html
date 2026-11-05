@@ -301,7 +301,7 @@
   .card.pick { cursor: pointer; }
   .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; transition-delay: var(--d, 0s); }
   .reveal.in { opacity: 1; transform: none; }
-  @media (prefers-reduced-motion: reduce) { .after::before { animation: none; } .reveal { opacity: 1; transform: none; } .glow, .btn, .btn.go::after { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .after::before { animation: none; } .reveal, .why-side.reveal { opacity: 1; transform: none; } .glow, .btn, .btn.go::after { transition: none; } }
 
   /* Product screens: tabs switch one large, flat screenshot; a click opens it at full size. */
   /* Wider than the text column on large screens (up to 1280 px), so the screens stay readable. */
@@ -464,9 +464,32 @@
   #intro.quick *, #intro.quick::before, #intro.quick::after { animation-duration: .01s !important; animation-delay: 0s !important; } /* reload: jump to the last frame */
   #intro.quick .core { animation: fadeIn .01s forwards !important; }
   #intro.quick .skipnote { display: none; }
-  .why { display: grid; grid-template-columns: auto 1fr; gap: var(--s-7); align-items: center; }
-  .why blockquote { margin: 0; font-size: var(--fs-lg); line-height: 1.7; color: var(--text); max-width: 62ch; }
-  @media (max-width: 860px) { .why { grid-template-columns: 1fr; } }
+  /* "Neden Janus?": the two faces. Past on the left (light, like the ring's left half), future on the right (cyan). */
+  .why-sec .wrap { text-align: center; }
+  .why-sec .eyebrow { justify-content: center; }
+  .why-lead { margin: 0 auto; font-size: var(--fs-xl); line-height: 1.5; max-width: 42ch; color: rgba(241, 245, 249, .9); }
+  .why-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--s-8); align-items: center; margin: var(--s-8) 0; }
+  .why-ring { display: block; width: 180px; height: 180px; }
+  .why-side .tag { display: block; margin-bottom: var(--s-3); font: 600 var(--fs-xs)/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .why-side h3 { margin: 0 0 var(--s-3); font-size: var(--fs-hero); line-height: 1; letter-spacing: -.02em; }
+  .why-side p { margin: 0; font-size: var(--fs-lg); line-height: 1.5; max-width: 24ch; }
+  .why-side.past { text-align: right; justify-self: end; }
+  .why-side.past h3 { color: #e6edf7; }
+  .why-side.fut h3 { color: var(--cyan); }
+  .why-side.past.reveal { transform: translateX(-28px); }
+  .why-side.fut.reveal { transform: translateX(28px); }
+  .why-side.past.reveal.in, .why-side.fut.reveal.in { transform: none; }
+  .why-close { margin: 0 auto; max-width: 30ch; font: 700 var(--fs-2xl)/1.3 var(--display); letter-spacing: -.01em; }
+  @media (max-width: 860px) {
+    .why-grid { grid-template-columns: 1fr; gap: var(--s-6); margin: var(--s-7) 0; }
+    .why-ring { width: 110px; height: 110px; order: -1; }
+    .why-sec .wrap { text-align: left; }
+    .why-lead { font-size: var(--fs-lg); margin: 0; }
+    .why-close { margin: 0; }
+    .why-ring { margin: 0 auto; }
+    .why-side.past { text-align: left; justify-self: start; }
+    .why-side h3 { font-size: var(--fs-3xl); }
+  }
   footer { padding: var(--s-6) 0 var(--s-7); color: var(--muted); font-size: var(--fs-md); border-top: 1px solid var(--line); }
   footer p { margin: 6px 0; }
   footer a { color: var(--muted); }
@@ -802,13 +825,24 @@
       </div>
     </section>
 
-    <section class="sec">
-      <div class="wrap why">
-        <svg class="reveal" width="150" height="150" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="wfut" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35C7E8"/><stop offset="1" stop-color="#3478F6"/></linearGradient><filter id="wglow" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="4"/></filter></defs><circle cx="60" cy="60" r="48" fill="none" stroke="#e6edf7" stroke-width=".8" opacity=".18"/><path d="M50 16A44 44 0 0 0 50 104" fill="none" stroke="#e6edf7" stroke-width="9" stroke-linecap="round"/><path d="M70 16A44 44 0 0 1 70 104" fill="none" stroke="url(#wfut)" stroke-width="9" stroke-linecap="round"/><path d="M52 36A26 26 0 0 0 52 84" fill="none" stroke="#e6edf7" stroke-width="2.5" stroke-linecap="round" opacity=".4"/><path d="M68 36A26 26 0 0 1 68 84" fill="none" stroke="#35C7E8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="3 5" opacity=".7"/><circle cx="60" cy="60" r="10" fill="#35C7E8" filter="url(#wglow)"/><circle cx="60" cy="60" r="5.5" fill="#ecfeff"/></svg>
-        <div>
-          <p class="eyebrow reveal" data-en="Why Janus?">Neden Janus?</p>
-          <blockquote class="reveal" data-en="Janus, the Roman god with one face looking to the past and one to the future, is the symbol of that unique vision. Being at the wheel of project control takes exactly this dynamism: one eye on completed quantities, effort spent and data; the other on the risks ahead and the big goal! In a project that measures the past without interruption and reads tomorrow from today, there is no room for uncertainty.">Roma tanrısı Janus, bir yüzü geçmişe bir yüzü geleceğe bakan o eşsiz vizyonun simgesidir. Proje kontrolünün direksiyonunda olmak da tam olarak bu dinamizmi gerektirir: Bir gözünüz tamamlanan metrajlarda, harcanan emekte ve veride; diğer gözünüz ise rotadaki risklerde ve büyük hedefte! Geçmişi kesintisiz ölçen ve yarını bugünden okuyan bir projede, belirsizliklere yer kalmaz.</blockquote>
+    <section class="sec why-sec">
+      <div class="wrap">
+        <p class="eyebrow reveal" data-en="Why Janus?">Neden Janus?</p>
+        <p class="why-lead reveal" data-en="Janus, the Roman god with one face looking to the past and one to the future, is the symbol of that unique vision. Being at the wheel of project control takes exactly this dynamism:">Roma tanrısı Janus, bir yüzü geçmişe bir yüzü geleceğe bakan o eşsiz vizyonun simgesidir. Proje kontrolünün direksiyonunda olmak da tam olarak bu dinamizmi gerektirir:</p>
+        <div class="why-grid">
+          <div class="why-side past reveal">
+            <span class="tag" data-en="One eye">Bir gözünüz</span>
+            <h3 data-en="The past">Geçmiş</h3>
+            <p data-en="on completed quantities, effort spent and data;">tamamlanan metrajlarda, harcanan emekte ve veride;</p>
+          </div>
+          <svg class="why-ring reveal" width="180" height="180" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="wfut" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35C7E8"/><stop offset="1" stop-color="#3478F6"/></linearGradient><filter id="wglow" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="4"/></filter></defs><circle cx="60" cy="60" r="48" fill="none" stroke="#e6edf7" stroke-width=".8" opacity=".18"/><path d="M50 16A44 44 0 0 0 50 104" fill="none" stroke="#e6edf7" stroke-width="9" stroke-linecap="round"/><path d="M70 16A44 44 0 0 1 70 104" fill="none" stroke="url(#wfut)" stroke-width="9" stroke-linecap="round"/><path d="M52 36A26 26 0 0 0 52 84" fill="none" stroke="#e6edf7" stroke-width="2.5" stroke-linecap="round" opacity=".4"/><path d="M68 36A26 26 0 0 1 68 84" fill="none" stroke="#35C7E8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="3 5" opacity=".7"/><circle cx="60" cy="60" r="10" fill="#35C7E8" filter="url(#wglow)"/><circle cx="60" cy="60" r="5.5" fill="#ecfeff"/></svg>
+          <div class="why-side fut reveal" style="--d:.12s">
+            <span class="tag" data-en="The other eye">Diğer gözünüz</span>
+            <h3 data-en="The future">Gelecek</h3>
+            <p data-en="on the risks ahead and the big goal!">rotadaki risklerde ve büyük hedefte!</p>
+          </div>
         </div>
+        <p class="why-close reveal" data-en="In a project that measures the past without interruption and reads tomorrow from today, there is no room for uncertainty.">Geçmişi kesintisiz ölçen ve yarını bugünden okuyan bir projede, belirsizliklere yer kalmaz.</p>
       </div>
     </section>
 
