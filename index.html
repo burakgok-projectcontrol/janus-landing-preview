@@ -110,7 +110,8 @@
   .lang button { all: unset; cursor: pointer; padding: 5px 11px; border-radius: var(--r-sm); font: 600 var(--fs-sm)/1 var(--sans); letter-spacing: .06em; color: var(--muted); }
   .lang button[aria-pressed="true"] { background: rgba(53, 199, 232, .16); color: var(--text); }
   .lang button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
-  @media (max-width: 420px) { header { gap: 10px; padding: 12px 14px; } .btn-sm { padding: 8px 12px; font-size: var(--fs-md); } }
+  @media (max-width: 420px) { header { gap: 10px; padding: 12px 14px; } .btn-sm { padding: 9px 11px; font-size: var(--fs-sm); white-space: nowrap; } .brand { gap: 8px; font-size: var(--fs-base); } .brand span { letter-spacing: .12em; } }
+  @media (pointer: coarse) { .lang button { padding: 10px 12px; } }
 
   /* Story mode: the page does not scroll; wheel / swipe / keys advance the scenes step by step. */
   html.story, html.story body { overflow: hidden; }
@@ -229,6 +230,35 @@
     .aif-bar .replay { margin-left: auto; }
   }
   @media (prefers-reduced-motion: reduce) { .aif-body > * { opacity: 1; transform: none; transition: none; } .aif-steps button { transition: none; } }
+  /* Phones: the five steps become a compact numbered strip; the current step's title and text show under it. */
+  .aif-now { display: none; }
+  @media (max-width: 860px) {
+    .aif-steps { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .aif-steps button { display: block; text-align: center; padding: 12px 0; border-left: 0; border-top: 2px solid var(--line); }
+    .aif-steps button::before { display: block; }
+    .aif-steps button b, .aif-steps button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } /* read by screen readers */
+    .aif-steps button.done { border-top-color: rgba(53, 199, 232, .5); }
+    .aif-steps button.cur { border-top-color: var(--cyan); }
+    .aif-now { display: block; margin: var(--s-3) 0 0; min-height: 4.8em; color: var(--muted); font-size: var(--fs-md); }
+    .aif-now b { display: block; color: var(--text); font-size: var(--fs-base); }
+  }
+  @media (max-width: 860px) {
+    /* Feature chips: smaller, so six of them do not fill a phone screen. */
+    .chips li { padding: 6px 10px; font-size: var(--fs-md); }
+    /* Product tabs scroll sideways: a fade on the right edge shows that more tabs follow. */
+    .show-tabs { -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); scroll-snap-type: x proximity; }
+    .show-tabs.end { -webkit-mask-image: none; mask-image: none; }
+    .show-tabs button { scroll-snap-align: start; }
+    /* Finger-sized targets. */
+    .aif-bar .replay { padding: 10px 6px; margin: -8px 0 -8px auto; }
+    footer a.mail, .cta-mail a, .foot-small a { display: inline-block; padding: 8px 0; }
+  }
+  /* Phones: the period report screenshot shows its readable part (title, indicators, executive summary); a tap opens
+     the whole screen. */
+  @media (max-width: 700px) {
+    .ai-shot .show-img { position: relative; aspect-ratio: calc(42 * 1.6 / 66); }
+    .ai-shot .show-img img { position: absolute; left: 0; top: 0; max-width: none; width: calc(100% * 100 / 42); height: auto; translate: -36% -16%; }
+  }
 
   .cta { text-align: center; }
   .cta .sub { margin-inline: auto; }
@@ -449,7 +479,7 @@
   .demo-form .f-err { margin: 0; min-height: 0; color: var(--neg-hi); font-size: var(--fs-md); }
   .demo-form .f-err:empty { display: none; }
   .demo-form .f-check { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: start; }
-  .demo-form .f-check input { width: 20px; height: 20px; margin: 2px 0 0; padding: 0; accent-color: var(--blue); }
+  .demo-form .f-check input { width: 22px; height: 22px; margin: 1px 0 0; padding: 0; accent-color: var(--blue); }
   .demo-form .f-check label { font-weight: 400; color: var(--muted); line-height: 1.5; }
   .demo-form .f-check .f-err { grid-column: 2; }
   .demo-form .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
@@ -545,7 +575,7 @@
     <span>JANUS</span>
   </a>
   <div class="lang" role="group" aria-label="Dil / Language">
-    <button type="button" data-lang="tr" lang="tr" aria-label="Türkçe">TR</button><button type="button" data-lang="en" lang="en" aria-label="English">EN</button>
+    <button type="button" data-lang="tr" lang="tr" aria-label="TR, Türkçe">TR</button><button type="button" data-lang="en" lang="en" aria-label="EN, English">EN</button>
   </div>
   <a class="btn go btn-sm" href="#iletisim" data-en="Request a demo">Demo talep et</a>
 </header>
@@ -712,6 +742,7 @@
             <li><button type="button" data-k="3"><b data-en="AI interprets">AI yorumlar</b><span data-en="It names the biggest contributors from the data; it does not compute totals or differences itself.">En büyük katkıyı veriden gösterir; toplam veya fark kendisi hesaplamaz.</span></button></li>
             <li><button type="button" data-k="4"><b data-en="Executive summary">Yönetici özeti</b><span data-en="The period report is written as a draft; once approved it is frozen as the month's record.">Dönem raporu taslak olarak yazılır; onaylanınca ayın kaydı olarak dondurulur.</span></button></li>
           </ol>
+          <p class="aif-now" id="aifNow" aria-hidden="true"></p>
         </div>
         <div>
           <div class="aif-panel" role="group" aria-label="Janus Asistan, örnek yanıt" data-en-aria-label="Janus Assistant, sample answer">
@@ -1129,7 +1160,7 @@
   if (!box) return;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const steps = [...box.querySelectorAll('.aif-steps button')], items = [...box.querySelectorAll('.aif-body [data-k]')];
-  const rep = box.querySelector('.aif-rep'), status = document.getElementById('aifStatus');
+  const rep = box.querySelector('.aif-rep'), status = document.getElementById('aifStatus'), now = document.getElementById('aifNow');
   const AT = [0, 1500, 3300, 5200, 7600], APPROVE = 9400;
   let timers = [];
   const stop = () => { timers.forEach(clearTimeout); timers = []; };
@@ -1142,6 +1173,8 @@
     items.forEach(el => el.classList.toggle('on', +el.dataset.k <= k));
     steps.forEach((b, i) => { b.classList.toggle('cur', i === k); b.classList.toggle('done', i < k); b.setAttribute('aria-current', i === k ? 'step' : 'false'); });
     if (k < 4) setStatus(false);
+    const b = steps[Math.max(k, 0)];
+    now.innerHTML = `<b>${b.querySelector('b').innerHTML}</b>${b.querySelector('span').innerHTML}`;
   }
   function play() {
     stop();
@@ -1175,6 +1208,8 @@
   function show(i, focus) {
     active = i;
     tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
+    const strip = tabs[0].parentElement;
+    if (strip.scrollWidth > strip.clientWidth) strip.scrollTo({ left: tabs[i].offsetLeft - strip.offsetLeft - 16, behavior: reduced ? 'auto' : 'smooth' });
     const t = tabs[i], f = files(t.dataset.shot);
     panel.setAttribute('aria-labelledby', t.id);
     title.innerHTML = t.innerHTML;
@@ -1226,6 +1261,9 @@
     document.querySelectorAll('img[data-langsrc]').forEach(im => { const f = files(im.dataset.langsrc); im.srcset = f.srcset; im.src = f.src; });
   };
   window.__showFeature();
+  const strip = tabs[0].parentElement, edge = () => strip.classList.toggle('end', strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 4);
+  strip.addEventListener('scroll', edge, { passive: true });
+  edge();
   // Replay the focus when the screen comes into view, so it is seen rather than played off screen.
   new IntersectionObserver(es => { if (es[0].isIntersecting) show(active); }, { threshold: 0.4 }).observe(zoomBtn);
 })();
