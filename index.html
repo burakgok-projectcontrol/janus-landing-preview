@@ -301,7 +301,7 @@
   .card.pick { cursor: pointer; }
   .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; transition-delay: var(--d, 0s); }
   .reveal.in { opacity: 1; transform: none; }
-  @media (prefers-reduced-motion: reduce) { .after::before { animation: none; } .reveal, .why-side.reveal { opacity: 1; transform: none; } .glow, .btn, .btn.go::after { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .after::before { animation: none; } .reveal, .why-side.reveal { opacity: 1; transform: none; } .lay-fig.reveal .lay { opacity: 1; transform: none; transition: none; } .glow, .btn, .btn.go::after { transition: none; } }
 
   /* Product screens: tabs switch one large, flat screenshot; a click opens it at full size. */
   /* Wider than the text column on large screens (up to 1280 px), so the screens stay readable. */
@@ -464,6 +464,24 @@
   #intro.quick *, #intro.quick::before, #intro.quick::after { animation-duration: .01s !important; animation-delay: 0s !important; } /* reload: jump to the last frame */
   #intro.quick .core { animation: fadeIn .01s forwards !important; }
   #intro.quick .skipnote { display: none; }
+  /* Security: three nested layers around the data (company, role, audit), with the same copy as a numbered list. */
+  .lay-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--s-8); align-items: center; margin-top: var(--s-7); }
+  .lay-fig { display: block; width: 100%; height: auto; color: var(--cyan); overflow: visible; }
+  .lay-fig .lay { fill: rgba(53, 199, 232, .04); stroke: var(--line-strong); stroke-width: 1.5; transition: fill .35s, stroke .35s; transform-box: fill-box; transform-origin: center; }
+  .lay-fig .lay-tags text { font: 600 11px var(--mono); letter-spacing: .12em; fill: var(--muted); }
+  .lay-fig .lay-core { opacity: .9; }
+  .lay-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-5); }
+  .lay-list li { display: grid; grid-template-columns: auto 1fr; gap: var(--s-4); padding: var(--s-4) 0 var(--s-4) var(--s-4); border-left: 2px solid var(--line); transition: border-color .35s, background .35s; }
+  .lay-list .num { font: 600 var(--fs-sm)/1.6 var(--mono); letter-spacing: .12em; color: var(--cyan); }
+  .lay-list h3 { margin: 0 0 var(--s-2); font-size: var(--fs-xl); line-height: 1.2; }
+  .lay-list p { margin: 0; color: var(--muted); max-width: 42ch; }
+  .lay-list li:hover { border-left-color: var(--amber); background: rgba(251, 191, 36, .05); }
+  .sec-lay:has(li[data-lay="1"]:hover) .l1, .sec-lay:has(li[data-lay="2"]:hover) .l2, .sec-lay:has(li[data-lay="3"]:hover) .l3 { stroke: var(--amber); fill: rgba(251, 191, 36, .08); }
+  .lay-fig.reveal .lay { opacity: 0; transform: scale(.92); transition: opacity .7s ease, transform .7s ease, fill .35s, stroke .35s; }
+  .lay-fig.reveal.in .lay { opacity: 1; transform: none; }
+  .lay-fig.reveal .l2 { transition-delay: .15s, .15s, 0s, 0s; }
+  .lay-fig.reveal .l3 { transition-delay: .3s, .3s, 0s, 0s; }
+  @media (max-width: 860px) { .lay-grid { grid-template-columns: 1fr; gap: var(--s-6); } .lay-fig { max-width: 420px; } .lay-list h3 { font-size: var(--fs-lg); } }
   /* "Neden Janus?": the two faces. Past on the left (light, like the ring's left half), future on the right (cyan). */
   .why-sec .wrap { text-align: center; }
   .why-sec .eyebrow { justify-content: center; }
@@ -813,14 +831,23 @@
       </div>
     </section>
 
-    <section class="sec">
+    <section class="sec sec-lay">
       <div class="wrap">
         <p class="eyebrow reveal" data-en="Security">Güvenlik</p>
         <h2 class="big reveal" data-en="Your data stays your company&#x27;s.">Verileriniz firmanıza özel.</h2>
-        <div class="grid">
-          <article class="card glow reveal" style="--d:.05s"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" /><path d="M9 12l2 2 4-4" /></svg></span><h3 data-en="Company isolation">Firma izolasyonu</h3><p data-en="Each company&#x27;s data is separated in the application and in the database with row-level security (RLS).">Her firmanın verisi uygulamada ve veritabanında satır düzeyi güvenlikle (RLS) ayrılır.</p></article>
-          <article class="card glow reveal" style="--d:.12s"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 19v-1a4 4 0 0 0-8 0v1M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM20 19v-1a3 3 0 0 0-3-3M17 5a3 3 0 0 1 0 6" /></svg></span><h3 data-en="Role-based permissions">Rol bazlı yetki</h3><p data-en="Screen- and action-level permissions through company roles and project-level exceptions.">Firma rolleri ve proje bazlı istisnalarla ekran ve işlem düzeyinde yetki.</p></article>
-          <article class="card glow reveal" style="--d:.19s"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM9 9h6M9 13h6M9 17h4" /></svg></span><h3 data-en="Audit log">Denetim kaydı</h3><p data-en="Important actions and permission changes are recorded with user and time.">Önemli işlemler ve yetki değişiklikleri kullanıcı ve zamanıyla kayıt altında.</p></article>
+        <div class="lay-grid">
+          <svg class="lay-fig reveal" viewBox="0 0 440 320" role="img" aria-label="Üç katman: firma izolasyonu, rol bazlı yetki, denetim kaydı" data-en-aria-label="Three layers: company isolation, role-based permissions, audit log">
+            <rect class="lay l1" x="6" y="6" width="428" height="308" rx="6"/>
+            <rect class="lay l2" x="62" y="56" width="316" height="208" rx="6"/>
+            <rect class="lay l3" x="116" y="102" width="208" height="116" rx="6"/>
+            <g class="lay-tags" aria-hidden="true"><text x="18" y="28">01</text><text x="74" y="78">02</text><text x="128" y="124">03</text></g>
+            <g class="lay-core" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="220" cy="140" rx="30" ry="9"/><path d="M190 140v28c0 5 13 9 30 9s30-4 30-9v-28M190 154c0 5 13 9 30 9s30-4 30-9"/></g>
+          </svg>
+          <ol class="lay-list">
+            <li class="reveal" style="--d:0.05s" data-lay="1"><span class="num" aria-hidden="true">01</span><div><h3 data-en="Company isolation">Firma izolasyonu</h3><p data-en="Each company&#x27;s data is separated in the application and in the database with row-level security (RLS).">Her firmanın verisi uygulamada ve veritabanında satır düzeyi güvenlikle (RLS) ayrılır.</p></div></li>
+            <li class="reveal" style="--d:0.15s" data-lay="2"><span class="num" aria-hidden="true">02</span><div><h3 data-en="Role-based permissions">Rol bazlı yetki</h3><p data-en="Screen- and action-level permissions through company roles and project-level exceptions.">Firma rolleri ve proje bazlı istisnalarla ekran ve işlem düzeyinde yetki.</p></div></li>
+            <li class="reveal" style="--d:0.25s" data-lay="3"><span class="num" aria-hidden="true">03</span><div><h3 data-en="Audit log">Denetim kaydı</h3><p data-en="Important actions and permission changes are recorded with user and time.">Önemli işlemler ve yetki değişiklikleri kullanıcı ve zamanıyla kayıt altında.</p></div></li>
+          </ol>
         </div>
       </div>
     </section>
