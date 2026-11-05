@@ -10,6 +10,51 @@ export const S = x => { x = clamp01(x); return x * x * (3 - 2 * x); };
 const ramp = (k, a, b) => S((k - a) / (b - a));
 export const fmt = num;
 
+// Chart labels and indicator cards, shared by the three scenes (one typography, one card, one colour code).
+// Indicator tone: good (green), warn (amber), bad (red); without a tone the card is cyan.
+export const CHART_CSS = `
+.evm-label { font: 600 13px/1.25 system-ui, -apple-system, "Segoe UI", sans-serif; color: #e6edf7; white-space: nowrap; transition: opacity .35s; text-shadow: 0 1px 6px #07111F, 0 0 2px #07111F; }
+.evm-label.pv { color: #8FDCF0; }
+.evm-label.ev, .evm-label.fc { color: #67e8f9; }
+.evm-label.ac { color: #fcd34d; }
+.evm-label.axis { color: #b4cdea; font-weight: 500; font-size: 12px; }
+.evm-label.today { color: #fff; }
+.evm-label.kpi { --tone: #67e8f9; min-width: 150px; background: rgba(7, 17, 31, .9); border: 1px solid rgba(165, 214, 255, .25); border-left: 3px solid var(--tone); border-radius: 4px; padding: 10px 14px 10px 12px;
+  font: 600 11px/1.2 ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace; letter-spacing: .06em; text-transform: uppercase; color: #cfe0f5; text-shadow: none; }
+.evm-label.kpi b { display: block; margin: 5px 0 3px; font: 700 30px/1.05 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: -.01em; text-transform: none; color: var(--tone); }
+.evm-label.kpi span { display: block; font: 400 12px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: 0; text-transform: none; color: #9fb0c9; }
+.evm-label.kpi.good { --tone: #4ade80; } .evm-label.kpi.warn { --tone: #fbbf24; } .evm-label.kpi.bad { --tone: #f87171; }
+@media (max-width: 600px) {
+  .evm-label { font-size: 10px; } .evm-label.axis { font-size: 9px; }
+  .evm-label.kpi { min-width: 0; padding: 6px 9px; font-size: 9px; } .evm-label.kpi b { font-size: 18px; margin: 3px 0 1px; } .evm-label.kpi span { font-size: 9px; }
+  .evm-label .long { display: none; } /* phones: short labels; the caption card explains them */
+}`;
+export function chartStyles() {
+  if (document.getElementById('evm-chart-css')) return;
+  const st = document.createElement('style');
+  st.id = 'evm-chart-css';
+  st.textContent = CHART_CSS;
+  document.head.appendChild(st);
+}
+
+// Soft-edged dark panel texture (alpha falls off towards the edges).
+function softPanel() {
+  const n = 128, c = document.createElement('canvas');
+  c.width = c.height = n;
+  const ctx = c.getContext('2d'), img = ctx.createImageData(n, n);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const e = Math.min(x, n - 1 - x, y, n - 1 - y) / (n * 0.22);
+    const a = e >= 1 ? 1 : e * e * (3 - 2 * e);
+    const i = (y * n + x) * 4;
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = 255;
+    img.data[i + 3] = Math.round(a * 255);
+  }
+  ctx.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 // rate > 1: work is earned faster than planned (ahead), rate < 1: behind. EV(m) = PV(m · rate).
 export function scenario({ months = 20, today = 11, rate = 20 / 19.6, cpi = 1.04 } = {}) {
   const pv = m => 100 * S(m / months);
@@ -21,6 +66,7 @@ export function scenario({ months = 20, today = 11, rate = 20 / 19.6, cpi = 1.04
 
 // origin: point at (month 0, value 0); axis: unit vector along time; len: axis length; height: 100 % in metres.
 export function createEvmChart(sc, { origin, axis, len, height, columns = true, ac = true, es = false, kpis = [], labelAt = {} }) {
+  chartStyles();
   const g = new THREE.Group();
   const UP = new THREE.Vector3(0, 1, 0);
   const across = new THREE.Vector3().crossVectors(axis, UP).normalize(); // towards the viewer's side
@@ -43,7 +89,7 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
   const C = {
     pv: mat('#8FDCF0', { emissive: '#3478F6', emissiveIntensity: 0.6 }),
     ev: mat('#35C7E8', { emissive: '#35C7E8', emissiveIntensity: 0.7 }),
-    ac: mat('#fbbf24', { emissive: '#f59e0b', emissiveIntensity: 0.6 }),
+    ac: mat('#fcd34d', { emissive: '#f59e0b', emissiveIntensity: 0.9 }),
     col: mat('#35C7E8', { opacity: 0.28, emissive: '#0e7490', emissiveIntensity: 0.4, depthWrite: false }),
     pvBar: mat('#8FDCF0', { opacity: 0.55, emissive: '#3478F6', emissiveIntensity: 0.5 }),
     evBar: mat('#35C7E8', { opacity: 0.75, emissive: '#35C7E8', emissiveIntensity: 0.6 }),
@@ -60,6 +106,17 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
     return l;
   };
   const alongQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), axis);
+
+  // A soft dark panel in the chart's plane, drawn over the terrain (no depth test) and under the chart: it dims what
+  // is behind and around the curves so they and their labels read clearly. It fades with the chart.
+  const panelMat = new THREE.MeshBasicMaterial({ map: softPanel(), color: '#07111F', transparent: true, opacity: 0, depthTest: false, depthWrite: false, fog: false, toneMapped: false });
+  panelMat.userData.base = 0.6;
+  mats.push(panelMat);
+  const panel = new THREE.Mesh(new THREE.PlaneGeometry(len * 1.42, height * 1.5), panelMat);
+  panel.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(axis.clone().normalize(), UP, across));
+  panel.position.copy(P(sc.months * 0.56, 50));
+  panel.renderOrder = -0.5; // after the drawing sheet (-1), before the chart
+  g.add(panel);
 
   // Axes and 50 % / 100 % guides.
   line([P(0, 0), P(sc.months, 0)], C.axis);
@@ -98,10 +155,10 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
     for (let m = m0; m < m1; m += 0.5) { const d = tube(fn, m, Math.min(m1, m + 0.32), r, material, 6); reveal(d, 1); out.push(d); }
     return out;
   };
-  const pvDashes = dashes(sc.pv, 0, sc.months, 0.16, C.pv);
-  const evLine = tube(sc.ev, 0, sc.today, 0.24, C.ev);
-  const acLine = ac ? tube(sc.ac, 0, sc.today, 0.2, C.ac) : null;
-  const fcDashes = dashes(sc.ev, sc.today, Math.min(sc.earnedEnd, sc.months * 1.25), 0.14, C.ev);
+  const pvDashes = dashes(sc.pv, 0, sc.months, 0.2, C.pv);
+  const evLine = tube(sc.ev, 0, sc.today, 0.3, C.ev);
+  const acLine = ac ? tube(sc.ac, 0, sc.today, 0.28, C.ac) : null;
+  const fcDashes = dashes(sc.ev, sc.today, Math.min(sc.earnedEnd, sc.months * 1.25), 0.17, C.ev);
 
   const todayLine = line([P(sc.today, 0), P(sc.today, 112)], C.today);
 
@@ -147,7 +204,8 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
     label(L_(`ES · kazanılan zaman: ay ${fmt(sc.es, 1)}`, `ES · earned schedule: month ${fmt(sc.es, 1)}`), P(sc.es * 0.55, 0, -5).add(up(2)), 'ev', 0.8);
     label(L_(`plana göre bugün: ay ${fmt(t, 0)}`, `planned for today: month ${fmt(t, 0)}`), P(t * 0.55, 0, 5).add(up(-2.5)), 'pv', 0.8);
   }
-  kpis.forEach((k, i) => label(`${k.name} <b>${k.value}</b><span>${k.sub}</span>`, P(k.m ?? t + 5, k.v ?? 42 - i * 24), 'kpi', 0.82 + i * 0.04));
+  // Indicator cards: same card in every scene; they appear once the curves are drawn.
+  kpis.forEach((k, i) => label(`${k.name} <b>${k.value}</b><span>${k.sub}</span>`, P(k.m ?? t + 5, k.v ?? 46 - i * 32), `kpi ${k.tone || ''}`, 0.74 + i * 0.05));
 
   // Phones: the chart is too small for labels on the curves, so the names and indices sit in a strip above it instead.
   if (!document.getElementById('evm-strip-css')) {
@@ -162,6 +220,9 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
   .evm-strip i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
   .evm-strip .kpi { background: rgba(7, 17, 31, .85); border: 1px solid #35C7E8; border-radius: 8px; padding: 3px 8px; }
   .evm-strip .kpi b { color: #67e8f9; font-size: 14px; margin-left: 4px; }
+  .evm-strip .kpi.good { border-color: #4ade80; } .evm-strip .kpi.good b { color: #4ade80; }
+  .evm-strip .kpi.warn { border-color: #fbbf24; } .evm-strip .kpi.warn b { color: #fcd34d; }
+  .evm-strip .kpi.bad { border-color: #f87171; } .evm-strip .kpi.bad b { color: #f87171; }
   .evm-strip .row { flex-basis: 100%; height: 0; }
 }`;
     document.head.appendChild(st);
@@ -176,7 +237,7 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
   if (ac) chip(`<i style="background:#fcd34d"></i>${L_('AC gerçekleşen', 'AC actual')}`, 0.7);
   if (es) chip(`<i style="background:#67e8f9"></i>${L_('ES ay', 'ES month')} ${fmt(sc.es, 1)}`, 0.8);
   strip.appendChild(Object.assign(document.createElement('span'), { className: 'row' }));
-  kpis.forEach((k, i) => chip(`${k.name}<b>${k.value}</b>`, 0.82 + i * 0.04, 'kpi'));
+  kpis.forEach((k, i) => chip(`${k.name}<b>${k.value}</b>`, 0.74 + i * 0.05, `kpi ${k.tone || ''}`));
   document.body.appendChild(strip);
   label(L_('tahmin', 'forecast'), P((t + sc.earnedEnd) / 2, sc.ev((t + sc.earnedEnd) / 2)).add(up(2.4)), 'fc', 0.92);
   label(pct(100), P(-0.9, 100), 'axis', 0.05);

@@ -16,20 +16,6 @@
   .pct { font-variant-numeric: tabular-nums; min-width: 4ch; text-align: right; font-weight: 600; }
   input[type=range] { width: 100%; accent-color: #35C7E8; }
   .labels-layer { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
-  .evm-label { font: 600 12px/1.2 system-ui, sans-serif; color: #e6edf7; white-space: nowrap; transition: opacity .35s; text-shadow: 0 1px 6px #07111F; }
-  .evm-label.pv { color: #8FDCF0; }
-  .evm-label.ev { color: #67e8f9; }
-  .evm-label.ac { color: #fcd34d; }
-  .evm-label.kpi { background: rgba(7, 17, 31, .85); border: 1px solid #35C7E8; border-radius: 10px; padding: 8px 12px; font-size: 13px; }
-  .evm-label.kpi.warn { border-color: #fbbf24; }
-  .evm-label.kpi b { font-size: 22px; margin-left: 6px; color: #67e8f9; }
-  .evm-label.kpi.warn b { color: #fcd34d; }
-  .evm-label.kpi span { display: block; font-weight: 400; font-size: 11px; color: #9fb0c9; margin-top: 2px; }
-  @media (max-width: 600px) {
-    .evm-label { font-size: 10px; } .evm-label.axis { font-size: 9px; }
-    .evm-label.kpi { padding: 5px 8px; font-size: 11px; border-radius: 8px; } .evm-label.kpi b { font-size: 16px; } .evm-label.kpi span { font-size: 9px; }
-    .evm-label .long { display: none; } /* phones: short labels; the caption card explains them */
-  }
   .note { position: fixed; top: 60px; left: 12px; font-size: 12px; color: #9fb0c9; z-index: 2; opacity: 0; transition: opacity .4s; }
   .embed .top, .embed .bar { display: none; }
   .embed .note { top: auto; bottom: 14px; left: auto; right: 16px; }
@@ -61,7 +47,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { createMachines } from './machines.js';
-import { fmt } from './evm.js';
+import { fmt, chartStyles } from './evm.js';
+chartStyles();
 import { createSheet, createBackdrop } from './sheet.js';
 import { t, pct } from './i18n.js';
 import { warmUp, pause } from './warmup.js';
@@ -388,8 +375,8 @@ label(`EV<span class="long"> · ${t('kazanılmış değer', 'earned value')}</sp
 label(`AC<span class="long"> · ${t('gerçekleşen maliyet', 'actual cost')}</span> ${pct(Math.round(SCN.ac))}`, new THREE.Vector3(AC_POS.x - 3, AC_TOP + 2.2, AC_POS.z + 3), 'ac', 0.55);
 label(`BAC<span class="long"> · ${t('bütçe', 'budget')}</span> ${pct(100)}`, new THREE.Vector3(EV_POS.x + 6, STACK_H + 1.6, EV_POS.z), 'pv', 0.62);
 label(`EAC<span class="long"> · ${t('tahmini maliyet', 'estimate at completion')}</span> ${pct(fmt(SCN.eac, 0))}`, new THREE.Vector3(AC_POS.x - 1, AC_TOP + EAC_H + 2.2, AC_POS.z + 3), 'ac', 0.93);
-label(`CPI <b>${fmt(SCN.cpi)}</b><span>${t('maliyet performansı', 'cost performance')}</span>`, new THREE.Vector3(-8, 38, 6), 'kpi', 0.6);
-label(`${t('Aşım tahmini', 'Forecast overrun')} <b>${pct(fmt(-SCN.vac, 1))}</b><span>VAC · EAC = BAC / CPI</span>`, new THREE.Vector3(-8, 27, 6), 'kpi warn', 0.95);
+label(`CPI <b>${fmt(SCN.cpi)}</b><span>${t('maliyet performansı', 'cost performance')}</span>`, new THREE.Vector3(-8, 38, 6), 'kpi warn', 0.6);
+label(`${t('Aşım tahmini', 'Forecast overrun')} <b>${pct(fmt(-SCN.vac, 1))}</b><span>VAC · EAC = BAC / CPI</span>`, new THREE.Vector3(-8, 27, 6), 'kpi bad', 0.95);
 
 await pause(); // start-up in slices (see warmup.js)
 // ------------------------------------------------------------------ edges, look switch

@@ -8,9 +8,12 @@ const H = 1152;
 const INK = a => `rgba(170, 214, 255, ${a})`;
 const fmtM = v => num(v);
 
-function base(ctx, kind) {
+function base(ctx, kind, frame = true) {
   ctx.fillStyle = 'rgba(18, 52, 112, 0.35)';
   ctx.fillRect(0, 0, W, H);
+  // The sheet behind a chart is only paper and drawing: the screen backdrop already has the grid, frame, title
+  // block and north arrow, and a second, offset set looked like a double image.
+  if (!frame) return;
   for (const [step, a] of [[32, 0.07], [160, 0.16]]) {
     ctx.strokeStyle = INK(a);
     ctx.lineWidth = 1;
@@ -220,11 +223,12 @@ export function createSheet(kind) {
   const draw = width => {
     W = canvas.width = width;
     canvas.height = H;
-    base(ctx, KIND[kind]);
-    // The drawing lives in the left third (behind the caption); the chart covers the rest of the sheet.
+    base(ctx, KIND[kind], false);
+    // The drawing lives in the left third (behind the caption); the chart covers the rest of the sheet. The sheet is
+    // 1.4 times as wide as the view, so the drawing starts where the view does (about 15 % in).
     const k = Math.min(1, (W * 0.34) / KIND[kind].fit);
     ctx.save();
-    ctx.translate(40 * (1 - k), (H - 120) * (1 - k));
+    ctx.translate(W * 0.15 + 40 * (1 - k), (H - 120) * (1 - k));
     ctx.scale(k, k);
     DRAW[kind](ctx);
     ctx.restore();

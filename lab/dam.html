@@ -16,19 +16,6 @@
   .pct { font-variant-numeric: tabular-nums; min-width: 4ch; text-align: right; font-weight: 600; }
   input[type=range] { width: 100%; accent-color: #35C7E8; }
   .labels-layer { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
-  .evm-label { font: 600 12px/1.2 system-ui, sans-serif; color: #e6edf7; white-space: nowrap; transition: opacity .35s; text-shadow: 0 1px 6px #07111F; }
-  .evm-label.pv { color: #8FDCF0; }
-  .evm-label.ev, .evm-label.fc { color: #67e8f9; }
-  .evm-label.ac { color: #fcd34d; }
-  .evm-label.axis { color: #9fc3ef; font-weight: 500; font-size: 11px; }
-  .evm-label.today { color: #fff; }
-  .evm-label.kpi { background: rgba(7, 17, 31, .85); border: 1px solid #35C7E8; border-radius: 10px; padding: 8px 12px; font-size: 13px; }
-  .evm-label.kpi b { font-size: 22px; margin-left: 6px; color: #67e8f9; }
-  .evm-label.kpi span { display: block; font-weight: 400; font-size: 11px; color: #9fb0c9; margin-top: 2px; }
-  @media (max-width: 600px) {
-    .evm-label { font-size: 10px; } .evm-label.axis { font-size: 9px; }
-    .evm-label.kpi { padding: 5px 8px; font-size: 11px; border-radius: 8px; } .evm-label.kpi b { font-size: 16px; } .evm-label.kpi span { font-size: 9px; }
-  }
   .note { position: fixed; top: 60px; left: 12px; font-size: 12px; color: #9fb0c9; z-index: 2; opacity: 0; transition: opacity .4s; }
   .embed .top, .embed .bar { display: none; }
   .embed .note { top: auto; bottom: 14px; left: auto; right: 16px; }
@@ -480,7 +467,7 @@ const SC = scenario();
 const CH = { x: 34, y0: 4, height: 24, z0: 26, z1: -26 };
 const chart = createEvmChart(SC, {
   origin: new THREE.Vector3(CH.x, CH.y0, CH.z0), axis: new THREE.Vector3(0, 0, Math.sign(CH.z1 - CH.z0)), len: Math.abs(CH.z1 - CH.z0), height: CH.height,
-  kpis: [{ name: 'SPI', value: fmt(SC.spi), sub: t('takvim performansı', 'schedule performance') }, { name: 'CPI', value: fmt(SC.cpi), sub: t('maliyet performansı', 'cost performance') }],
+  kpis: [{ name: 'SPI', value: fmt(SC.spi), sub: t('takvim performansı', 'schedule performance'), tone: 'good' }, { name: 'CPI', value: fmt(SC.cpi), sub: t('maliyet performansı', 'cost performance'), tone: 'good' }],
 });
 scene.add(chart.group);
 // Camera framing for the chart: looking upstream at the chart, the dam behind it.
