@@ -293,7 +293,7 @@
   .cta .sub { margin-inline: auto; }
 
   /* After the story: moving blueprint grid, glowing cards, a 3D "screen" that shows the product. */
-  .after { overflow: hidden; }
+  .after { overflow: hidden; overflow: clip; } /* clip: no scroll container, so sticky works inside */
   .after::before { content: ""; position: absolute; inset: -160px 0 0; pointer-events: none; opacity: .55;
     background-image: linear-gradient(rgba(120, 180, 255, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .07) 1px, transparent 1px),
       linear-gradient(rgba(120, 180, 255, .14) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .14) 1px, transparent 1px);
@@ -342,14 +342,33 @@
      towards it. Pointing at the screen lifts the focus so the whole screen can be read. Only on the large tab view. */
   .show-img .shot-in { display: block; position: relative; transform-origin: var(--ox, 50%) var(--oy, 50%); transition: scale 1.4s cubic-bezier(.2, .7, .2, 1); }
   .show-img.focus .shot-in { scale: 1.025; }
-  .show-img .focus-box { position: absolute; z-index: 1; pointer-events: none; opacity: 0; border: 2px solid var(--cyan); border-radius: var(--r);
+  .show-img .focus-box { position: absolute; z-index: 1; pointer-events: none; opacity: 0; visibility: hidden; /* hidden at once while it moves: no layout shift */ border: 2px solid var(--cyan); border-radius: var(--r);
     box-shadow: 0 0 0 100vmax rgba(7, 17, 31, .32); transform: scale(1.04); transition: opacity .5s ease, transform .9s cubic-bezier(.2, .7, .2, 1); }
-  .show-img.focus .focus-box { opacity: 1; transform: none; }
+  .show-img.focus .focus-box { opacity: 1; transform: none; visibility: visible; }
   .show-img .focus-box em { position: absolute; left: -2px; bottom: 100%; margin-bottom: 6px; white-space: nowrap; font: 600 var(--fs-sm)/1 var(--mono); font-style: normal; letter-spacing: .04em; color: #07111F; background: var(--cyan); padding: 6px 9px; border-radius: var(--r-sm); }
   .show-img .focus-box.low em { bottom: auto; top: 100%; margin: 6px 0 0; }
   .show-img.focus:hover .focus-box { opacity: 0; }
   .show-img.focus:hover .shot-in { scale: 1; }
   .show-cap { margin: 12px 0 0; color: var(--muted); font-size: var(--fs-md); }
+  /* Wide screens: a product tour. The chapters on the left scroll normally; the screen on the right stays in place and
+     switches (with its focus frame) as each chapter crosses the middle of the viewport. Phones keep the tabs. */
+  .show-steps { display: none; }
+  .show.scrolly { display: grid; grid-template-columns: minmax(280px, 330px) minmax(0, 1fr); gap: 0 var(--s-8); align-items: start; }
+  .show.scrolly .show-tabs, .show.scrolly .show-text { display: none; }
+  .show.scrolly .show-steps { display: block; grid-column: 1; grid-row: 1; list-style: none; margin: 0; padding: 0; }
+  .show.scrolly .show-panel { grid-column: 2; grid-row: 1; position: sticky; top: calc(50vh - var(--ph, 300px) / 2 + 30px); }
+  .show-steps li { min-height: 58vh; display: flex; flex-direction: column; justify-content: center; padding: var(--s-5) 0 var(--s-5) var(--s-5);
+    border-left: 2px solid var(--line); opacity: .38; transition: opacity .45s ease, border-color .45s ease; }
+  .show-steps li:first-child { min-height: 40vh; justify-content: flex-start; padding-top: var(--s-6); }
+  .show-steps li.on { opacity: 1; border-left-color: var(--cyan); }
+  .show-steps .num { font: 600 var(--fs-sm)/1 var(--mono); letter-spacing: .12em; color: var(--cyan); margin-bottom: var(--s-3); }
+  .show-steps h3 { margin: 0 0 var(--s-3); font-size: var(--fs-2xl); line-height: 1.15; }
+  .show-steps h3 button { all: unset; cursor: pointer; }
+  .show-steps h3 button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 4px; border-radius: var(--r-sm); }
+  .show-steps p { margin: 0; color: var(--muted); }
+  .show-steps .benefit { margin-top: var(--s-3); color: var(--text); }
+  .show-steps .benefit b { font: 600 var(--fs-xs)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--amber-hi); margin-right: 8px; }
+  @media (prefers-reduced-motion: reduce) { .show-steps li { transition: none; } }
   .show-cap b { color: var(--text); }
   #shotDlg { padding: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); color: var(--text); max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow: auto; }
   #shotDlg::backdrop { background: rgba(7, 17, 31, .88); }
@@ -766,6 +785,7 @@
             <button type="button" role="tab" id="tab-evm" aria-controls="showPanel" aria-selected="false" tabindex="-1" data-shot="evm" data-en="Earned value and alerts">Kazanılmış değer ve uyarılar</button>
             <button type="button" role="tab" id="tab-dashboard" aria-controls="showPanel" aria-selected="false" tabindex="-1" data-shot="dashboard" data-en="Dashboard and reports">Dashboard ve raporlar</button>
           </div>
+          <ol class="show-steps" id="showSteps" aria-label="Janus ekranları, adım adım" data-en-aria-label="Janus screens, step by step"></ol>
           <div class="show-panel" id="showPanel" role="tabpanel" aria-labelledby="tab-mapping">
             <div class="show-text"><h3 id="showTitle"></h3><div><p id="showDesc"></p><p class="benefit" id="showBenefit"></p></div></div>
             <button class="show-img" type="button" id="showZoom" aria-label="Ekranı tam boyutta aç" data-en-aria-label="Open the screen at full size">
@@ -1354,13 +1374,54 @@
       if (to !== undefined) { e.preventDefault(); show(to, true); }
     });
   });
-  // Cards of the ERP – JANUS – planning diagram open their screen and bring the tabs into view.
-  const showBox = document.querySelector('.show');
+  // Product tour on wide screens: one chapter per tab, built from the tab label and #showData (so both languages
+  // follow the page's own switch). The chapter crossing the middle of the viewport selects the screen.
+  const showBox = document.querySelector('.show'), steps = document.getElementById('showSteps');
+  const wide = matchMedia('(min-width: 1100px)');
+  let chapters = [], stepIO = null;
+  function buildSteps() {
+    steps.innerHTML = tabs.map((t, i) => {
+      const shot = t.dataset.shot;
+      const d = document.querySelector(`#showData [data-shot="${shot}"]`), b = document.querySelector(`#showData [data-benefit="${shot}"]`);
+      return `<li data-i="${i}"><span class="num" aria-hidden="true">0${i + 1}</span><h3><button type="button" aria-controls="showPanel">${t.innerHTML}</button></h3>`
+        + `<p>${d.innerHTML}</p><p class="benefit"><b>${lang() === 'en' ? 'Benefit' : 'Fayda'}</b>${b.innerHTML}</p></li>`;
+    }).join('');
+    chapters = [...steps.children];
+    chapters.forEach((li, i) => li.querySelector('button').addEventListener('click', () => { show(i); li.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' }); }));
+    mark(active);
+    if (stepIO) { stepIO.disconnect(); chapters.forEach(li => stepIO.observe(li)); }
+  }
+  function mark(i) { chapters.forEach((li, k) => li.classList.toggle('on', k === i)); }
+  function preload(i) { const t = tabs[i]; if (!t) return; const f = files(t.dataset.shot), im = new Image(); im.sizes = img.sizes; im.srcset = f.srcset; im.src = f.src; }
+  function layout() {
+    const on = wide.matches;
+    showBox.classList.toggle('scrolly', on);
+    if (stepIO) { stepIO.disconnect(); stepIO = null; }
+    if (on) {
+      // The screen's height centres the sticky panel vertically.
+      showBox.style.setProperty('--ph', `${document.getElementById('showPanel').offsetHeight}px`);
+      stepIO = new IntersectionObserver(es => es.forEach(e => {
+        if (!e.isIntersecting) return;
+        const i = +e.target.dataset.i;
+        if (i !== active) show(i);
+        mark(i);
+        preload(i + 1);
+      }), { rootMargin: '-50% 0px -50% 0px' });
+      chapters.forEach(li => stepIO.observe(li));
+    }
+  }
+  buildSteps();
+  layout();
+  wide.addEventListener('change', layout);
+  addEventListener('resize', () => { if (wide.matches) showBox.style.setProperty('--ph', `${document.getElementById('showPanel').offsetHeight}px`); }, { passive: true });
+  // Cards of the ERP – JANUS – planning diagram open their screen: the matching chapter on wide screens, the tab otherwise.
   document.querySelectorAll('.flow [data-shot]').forEach(n => n.addEventListener('click', () => {
     const i = tabs.findIndex(t => t.dataset.shot === n.dataset.shot);
     if (i < 0) return;
     show(i);
-    showBox.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+    mark(i);
+    if (showBox.classList.contains('scrolly')) chapters[i].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    else showBox.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
   }));
   function open(shot, alt) { dlgImg.src = files(shot).src; dlgImg.alt = alt; dlg.showModal(); }
   document.getElementById('showZoom').addEventListener('click', () => open(tabs[active].dataset.shot, img.alt));
@@ -1370,6 +1431,7 @@
   // Language change: re-render the tab and swap the other language-specific screenshots.
   window.__showFeature = () => {
     show(active);
+    if (typeof buildSteps === 'function' && steps) buildSteps();
     document.querySelectorAll('img[data-langsrc]').forEach(im => { const f = files(im.dataset.langsrc); im.srcset = f.srcset; im.src = f.src; });
   };
   window.__showFeature();
