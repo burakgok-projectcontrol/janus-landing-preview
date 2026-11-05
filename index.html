@@ -82,11 +82,30 @@
   .btn-sm { padding: 8px 16px; font-size: var(--fs-base); }
   .btn-line { background: transparent; border: 1px solid rgba(241, 245, 249, .45); padding: 11px 21px; }
   .btn-line:hover { background: rgba(53, 199, 232, .06); border-color: var(--cyan); color: var(--cyan); }
-  .hero-cap .lede { margin: 0 0 16px; }
-  .hero-chips { list-style: none; padding: 0; margin: 0 0 22px; display: flex; flex-wrap: wrap; gap: 6px; max-width: 46ch; }
-  .hero-chips li { border: 1px solid var(--line); background: rgba(7, 17, 31, .55); padding: 4px 9px; border-radius: var(--r-sm); font: 600 var(--fs-sm)/1.3 var(--mono); color: var(--text); cursor: help; }
+  .hero-cap .eyebrow { display: flex; align-items: center; gap: var(--s-3); font-size: var(--fs-md); letter-spacing: .1em; white-space: nowrap; margin: 0 0 var(--s-4); }
+  .hero-cap .eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--cyan); flex: none; }
+  .hero-cap .lede { margin: 0 0 var(--s-6); font-size: var(--fs-lg); line-height: 1.6; max-width: 44ch; color: rgba(241, 245, 249, .88); }
+  .hero-cta .btn { padding: 15px 26px; font-size: var(--fs-base); }
+  .hero-cta .btn-line { padding: 14px 25px; }
+  /* Wide screens: a soft dark field behind the text keeps it legible over the scene without heavy text shadows. */
+  @media (min-width: 861px) {
+    .hero-cap::before { content: ""; position: absolute; z-index: -1; inset: -30vh -18vw -30vh -40vw; pointer-events: none;
+      background: radial-gradient(closest-side, rgba(7, 17, 31, .72), rgba(7, 17, 31, .35) 60%, transparent); }
+  }
+  /* Entrance as the opening fades: eyebrow, title, lede, buttons, chips one after another. The text is already painted
+     underneath the opening (it is the page's largest content), so it only eases in from a slight offset. */
+  html.hero-enter .hero-cap > * { animation: heroIn .8s cubic-bezier(.2, .7, .2, 1) both; }
+  html.hero-enter .hero-cap > :nth-child(2) { animation-delay: .08s; }
+  html.hero-enter .hero-cap > :nth-child(3) { animation-delay: .16s; }
+  html.hero-enter .hero-cap > :nth-child(4) { animation-delay: .24s; }
+  html.hero-enter .hero-cap > :nth-child(5) { animation-delay: .32s; }
+  html.hero-enter .hero-cap > :nth-child(6) { animation-delay: .4s; }
+  @keyframes heroIn { from { opacity: .3; transform: translateY(14px); } }
+  @media (prefers-reduced-motion: reduce) { html.hero-enter .hero-cap > * { animation: none; } }
+  .hero-chips { list-style: none; padding: 0; margin: var(--s-5) 0 0; display: flex; flex-wrap: wrap; gap: 6px; max-width: 46ch; }
+  .hero-chips li { border: 1px solid var(--line); background: rgba(7, 17, 31, .45); padding: 3px 8px; border-radius: var(--r-sm); font: 600 var(--fs-xs)/1.3 var(--mono); color: var(--muted); cursor: help; }
   .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; pointer-events: auto; }
-  @media (max-width: 860px) { .hero-chips { margin-bottom: 14px; } .hero-cap .hint { display: none; } .hero-cta .btn { flex: 1 1 150px; text-align: center; padding: 11px 14px; font-size: var(--fs-base); } .hero-cap .lede { font-size: var(--fs-md); } .hero-chips li { font-size: var(--fs-xs); padding: 3px 7px; } }
+  @media (max-width: 860px) { .hero-chips { display: none; } .hero-cap .eyebrow { font-size: var(--fs-xs); letter-spacing: .06em; white-space: normal; margin-bottom: var(--s-2); } .hero-cap .eyebrow::before { display: none; } .hero-cap .lede { margin-bottom: var(--s-4); } .hero-cta .btn { white-space: nowrap; } .hero-cap .hint { display: none; } .hero-cta .btn { flex: 1 1 140px; text-align: center; padding: 12px 10px; font-size: var(--fs-md); } .hero-cap .lede { font-size: var(--fs-md); } .hero-chips li { font-size: var(--fs-xs); padding: 3px 7px; } }
   .lang { margin-left: auto; display: inline-flex; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 3px; background: rgba(7, 17, 31, .6); }
   .lang button { all: unset; cursor: pointer; padding: 5px 11px; border-radius: var(--r-sm); font: 600 var(--fs-sm)/1 var(--sans); letter-spacing: .06em; color: var(--muted); }
   .lang button[aria-pressed="true"] { background: rgba(53, 199, 232, .16); color: var(--text); }
@@ -117,9 +136,9 @@
   .cap:not(.hero-cap) { padding: 26px 26px; width: 100%; box-sizing: border-box; }
   .cap p b { color: var(--text); font-weight: 600; }
   .hero-cap { background: none; border: 0; padding: 0; width: min(620px, calc(100vw - 32px)); }
-  .hero-cap h1 { margin: 0 0 var(--s-4); font-size: var(--fs-hero); line-height: 1.05; letter-spacing: -.02em; text-shadow: 0 2px 30px rgba(7, 17, 31, .8); }
+  .hero-cap h1 { margin: 0 0 var(--s-4); font-size: var(--fs-hero); line-height: 1.05; letter-spacing: -.02em; text-shadow: 0 2px 24px rgba(7, 17, 31, .6); }
   .grad { color: var(--cyan); }
-  .hero-cap p { font-size: var(--fs-lg); color: var(--text); text-shadow: 0 1px 12px rgba(7, 17, 31, .9); max-width: 46ch; }
+  .hero-cap p { font-size: var(--fs-lg); color: var(--text); text-shadow: 0 1px 10px rgba(7, 17, 31, .6); max-width: 46ch; }
   .hint { margin-top: 26px; display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: var(--fs-md); }
   .hint i { width: 22px; height: 34px; border: 2px solid var(--muted); border-radius: 12px; position: relative; }
   .hint i::after { content: ""; position: absolute; left: 50%; top: 6px; width: 4px; height: 7px; margin-left: -2px; border-radius: 2px; background: var(--cyan); animation: wheel 1.6s infinite; }
@@ -538,9 +557,13 @@
 <!-- Captions: data-scene, data-from, data-to (scene progress 0..1). -->
 <div class="captions" id="captions">
   <div class="cap hero-cap on" data-scene="0" data-from="-1" data-to="0.3">
-    <p class="eyebrow" data-en="Project control platform for construction">İnşaat projeleri için proje kontrol platformu</p>
+    <p class="eyebrow" data-en="AI-assisted project control platform for construction">Yapay zekâ destekli inşaat proje kontrol platformu</p>
     <h1 data-en="Measure the Past,&lt;br&gt;&lt;span class=&quot;grad&quot;&gt;Manage the Future&lt;/span&gt;">Geçmişi Ölç,<br><span class="grad">Geleceği Yönet</span></h1>
-    <p class="lede" data-en="JANUS brings work items, cost and schedule into one model. Project control teams see variances without waiting for the month-end report.">JANUS; iş kalemlerini, maliyeti ve takvimi tek modelde birleştirir. Proje kontrol ekipleri, sapmayı ay sonu raporunu beklemeden görür.</p>
+    <p class="lede" data-en="JANUS brings ERP cost, the schedule and bill-of-quantities (BOQ) items into one model. The system calculates the earned-value indicators; AI interprets the variance, before the month-end report.">JANUS; ERP maliyetini, iş programını ve metraj-keşif (BOQ) kalemlerini tek modelde birleştirir. Kazanılmış değer göstergelerini sistem hesaplar, sapmayı yapay zekâ yorumlar; ay sonu raporunu beklemeden.</p>
+    <div class="hero-cta">
+      <a class="btn go" href="#iletisim" data-en="Request a Personal Demo">Kişisel Demo Talep Et</a>
+      <a class="btn btn-line" id="explore" href="#urun" data-en="Explore the Platform">Platformu Keşfet</a>
+    </div>
     <ul class="hero-chips" aria-label="Ölçülen büyüklükler" data-en-aria-label="Measured quantities">
       <li title="BOQ: metraj-keşif listesi" data-en-title="BOQ: bill of quantities">BOQ</li>
       <li title="PV / EV / AC: planlanan değer, kazanılan değer, gerçekleşen maliyet" data-en-title="PV / EV / AC: planned value, earned value, actual cost">PV · EV · AC</li>
@@ -549,10 +572,6 @@
       <li title="Earned Schedule: kazanılmış takvim" data-en-title="Earned Schedule">Earned Schedule</li>
       <li title="Yapay zekâ analizi" data-en-title="AI analysis" data-en="AI analysis">AI analiz</li>
     </ul>
-    <div class="hero-cta">
-      <a class="btn go" href="#iletisim" data-en="Request a Personal Demo">Kişisel Demo Talep Et</a>
-      <a class="btn btn-line" id="explore" href="#urun" data-en="Explore the Platform">Platformu Keşfet</a>
-    </div>
     <span class="hint" data-en="&lt;i&gt;&lt;/i&gt;The dam is being built; scroll to see the chart"><i></i>Baraj yapılıyor; grafiğe geçmek için kaydırın</span>
   </div>
   <div class="cap" data-scene="0" data-from="0.3" data-to="0.5001">
@@ -1060,7 +1079,7 @@
 </script>
 
 <script>
-// Opening animation: plays once (~7 s), then hands over to the story. Any click, wheel, swipe or key skips it.
+// Opening animation: plays once (~4.5 s), then hands over to the story. Any click, wheel, swipe or key skips it.
 (() => {
   const intro = document.getElementById('intro');
   if (!intro) return;
@@ -1071,6 +1090,11 @@
   let seen = false;
   try { seen = sessionStorage.getItem('janus-intro') === '1'; sessionStorage.setItem('janus-intro', '1'); } catch (e) { /* storage blocked: always play */ }
   if (seen) intro.classList.add('quick');
+  // First visit: the drawing is unchanged but plays faster (7.6 s → about 4.5 s). Every CSS animation of the opening
+  // gets the same playback rate, so the timing between its parts stays as designed.
+  const RATE = 1.7;
+  const speed = () => intro.getAnimations({ subtree: true }).forEach(a => { a.playbackRate = RATE; });
+  if (!seen && !reduced && intro.getAnimations) { speed(); requestAnimationFrame(speed); }
   let done = false;
   // At the end the picture holds still while the first scene starts up behind it, then fades out.
   function finish() {
@@ -1086,10 +1110,11 @@
       // A few quiet frames after the scene reports ready (its first frames compile shaders); give up waiting after 8 s.
       if (settled < 6 && performance.now() - t0 < 8000) return requestAnimationFrame(wait);
       intro.classList.add('out');
+      document.documentElement.classList.add('hero-enter');
       setTimeout(() => { intro.remove(); window.__intro = false; window.__startStory && window.__startStory(); }, 800);
     })();
   }
-  setTimeout(finish, seen ? 400 : reduced ? 1600 : 7600);
+  setTimeout(finish, seen ? 400 : reduced ? 1600 : Math.round(7600 / RATE));
   const skip = e => { if (e.type === 'wheel') e.preventDefault(); finish(); };
   intro.addEventListener('click', skip);
   addEventListener('wheel', e => { if (window.__intro) skip(e); }, { passive: false });
