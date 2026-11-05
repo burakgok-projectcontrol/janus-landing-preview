@@ -338,6 +338,13 @@
   .show-img:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
   .show-img img { display: block; width: 100%; height: auto; transition: opacity .3s ease, transform .6s ease; }
   .show-img img.swap { opacity: 0; transform: scale(1.015); }
+  /* Screen transitions under test (?tour=dive, ?tour=wipe): the outgoing screen is a ghost image above the new one. */
+  .show-img .shot-ghost { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; }
+  .show-img .shot-ghost[hidden], .show-img .shot-scan[hidden] { display: none; }
+  /* The scan line is the bottom edge of a full-size layer moved with transform (no layout shift). */
+  .show-img .shot-scan { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+  .show-img .shot-scan::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+    background: var(--cyan); box-shadow: 0 0 18px 4px rgba(53, 199, 232, .55); }
   /* Focus: after a screen appears, a frame settles on its key area, the rest dims slightly and the image eases in
      towards it. Pointing at the screen lifts the focus so the whole screen can be read. Only on the large tab view. */
   .show-img .shot-in { display: block; position: relative; transform-origin: var(--ox, 50%) var(--oy, 50%); transition: scale 1.4s cubic-bezier(.2, .7, .2, 1); }
@@ -1337,6 +1344,15 @@
   const files = shot => ({ src: `assets/screens/${lang()}/${shot}.webp`, srcset: `assets/screens/${lang()}/${shot}-sm.webp 800w, assets/screens/${lang()}/${shot}.webp 1600w` });
   const benefit = document.getElementById('showBenefit'), zoomBtn = document.getElementById('showZoom'), focusBox = document.getElementById('showFocus');
   let active = 0, focusTimer = 0;
+  // Screen transition under test: ?tour=dive (into the focus area and out of the next one's) or ?tour=wipe (the old
+  // screen is wiped away upwards behind a scan line). Without the parameter the plain cross-fade stays.
+  const TOUR = new URLSearchParams(location.search).get('tour');
+  const shotIn = zoomBtn.querySelector('.shot-in');
+  const ghost = Object.assign(document.createElement('img'), { className: 'shot-ghost', alt: '', hidden: true });
+  const scan = Object.assign(document.createElement('span'), { className: 'shot-scan', hidden: true });
+  ghost.setAttribute('aria-hidden', 'true');
+  shotIn.append(ghost, scan);
+  let lastOrigin = '50% 50%';
   function show(i, focus) {
     active = i;
     tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
@@ -1358,13 +1374,41 @@
     zoomBtn.style.cssText = `--ox:${fx + fw / 2}%;--oy:${fy + fh / 2}%;--mx:${mx};--my:${my};--mw:${mw};--mh:${mh}`;
     const settle = () => { focusTimer = setTimeout(() => zoomBtn.classList.add('focus'), reduced ? 0 : 450); };
     const alt = `${t.textContent}: ${lang() === 'en' ? 'Janus screen, sample project data' : 'Janus ekranı, örnek proje verisi'}`;
+    const origin = `${fx + fw / 2}% ${fy + fh / 2}%`, from = lastOrigin; // from: the outgoing screen's focus
+    const fancy = (TOUR === 'dive' || TOUR === 'wipe') && !reduced;
     if (img.getAttribute('src') === f.src) { img.alt = alt; settle(); }
     else {
-      if (!reduced) img.classList.add('swap');
+      if (!reduced && !fancy) img.classList.add('swap');
       const pre = new Image(); pre.sizes = img.sizes; pre.srcset = f.srcset; pre.src = f.src;
-      const apply = () => { img.srcset = f.srcset; img.src = f.src; img.alt = alt; requestAnimationFrame(() => img.classList.remove('swap')); settle(); };
-      (pre.decode ? pre.decode() : Promise.resolve()).then(apply, apply);
+      const plain = () => { img.srcset = f.srcset; img.src = f.src; img.alt = alt; requestAnimationFrame(() => img.classList.remove('swap')); settle(); };
+      const swap = () => {
+        [img, ghost, scan].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+        ghost.src = img.currentSrc || img.src;
+        ghost.hidden = false;
+        img.srcset = f.srcset; img.src = f.src; img.alt = alt;
+        let last;
+        if (TOUR === 'dive') {
+          // Into the old screen's focus area…
+          ghost.style.transformOrigin = from;
+          ghost.animate([{ transform: 'scale(1)', opacity: 1, filter: 'blur(0)' }, { transform: 'scale(2.6)', opacity: 0, filter: 'blur(2px)' }],
+            { duration: 620, easing: 'cubic-bezier(.55, 0, .8, .3)', fill: 'forwards' });
+          // …and out of the new one's.
+          img.style.transformOrigin = origin;
+          last = img.animate([{ transform: 'scale(1.9)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }],
+            { duration: 900, delay: 200, easing: 'cubic-bezier(.16, .8, .2, 1)', fill: 'backwards' });
+        } else {
+          const t = { duration: 820, easing: 'cubic-bezier(.65, 0, .35, 1)', fill: 'forwards' };
+          ghost.animate([{ clipPath: 'inset(0 0 0 0)' }, { clipPath: 'inset(0 0 100% 0)' }], t);
+          scan.hidden = false;
+          last = scan.animate([{ transform: 'translateY(0)', opacity: 1 }, { transform: 'translateY(-94%)', opacity: 1, offset: .9 }, { transform: 'translateY(-100%)', opacity: 0 }], t);
+          img.animate([{ filter: 'brightness(.7)' }, { filter: 'brightness(1)' }], { duration: 820, easing: 'ease-out' });
+        }
+        const end = () => { ghost.hidden = true; scan.hidden = true; ghost.getAnimations().forEach(a => a.cancel()); settle(); };
+        last.finished.then(end, () => {});
+      };
+      (pre.decode ? pre.decode() : Promise.resolve()).then(fancy ? swap : plain, fancy ? swap : plain);
     }
+    lastOrigin = origin;
     if (focus) t.focus();
   }
   tabs.forEach((t, i) => {
