@@ -1414,7 +1414,9 @@
   // follow the page's own switch). The chapter crossing the middle of the viewport selects the screen.
   const showBox = document.querySelector('.show'), steps = document.getElementById('showSteps');
   const wide = matchMedia('(min-width: 1100px)');
-  let chapters = [], stepIO = null;
+  let chapters = [], stepIO = null, jump = -1, jumpTimer = 0;
+  // A jump goes straight to its chapter; the chapters scrolled past on the way do not switch the screen.
+  const jumpTo = i => { jump = i; clearTimeout(jumpTimer); jumpTimer = setTimeout(() => { jump = -1; }, 2500); show(i); mark(i); chapters[i].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' }); };
   function buildSteps() {
     steps.innerHTML = tabs.map((t, i) => {
       const shot = t.dataset.shot;
@@ -1423,7 +1425,7 @@
         + `<p>${d.innerHTML}</p><p class="benefit"><b>${lang() === 'en' ? 'Benefit' : 'Fayda'}</b>${b.innerHTML}</p></li>`;
     }).join('');
     chapters = [...steps.children];
-    chapters.forEach((li, i) => li.querySelector('button').addEventListener('click', () => { show(i); li.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' }); }));
+    chapters.forEach((li, i) => li.querySelector('button').addEventListener('click', () => jumpTo(i)));
     mark(active);
     if (stepIO) { stepIO.disconnect(); chapters.forEach(li => stepIO.observe(li)); }
   }
@@ -1439,6 +1441,7 @@
       stepIO = new IntersectionObserver(es => es.forEach(e => {
         if (!e.isIntersecting) return;
         const i = +e.target.dataset.i;
+        if (jump >= 0) { if (i === jump) { jump = -1; clearTimeout(jumpTimer); } return; }
         if (i !== active) show(i);
         mark(i);
         preload(i + 1);
@@ -1454,10 +1457,9 @@
   document.querySelectorAll('.flow [data-shot]').forEach(n => n.addEventListener('click', () => {
     const i = tabs.findIndex(t => t.dataset.shot === n.dataset.shot);
     if (i < 0) return;
+    if (showBox.classList.contains('scrolly')) { jumpTo(i); return; }
     show(i);
-    mark(i);
-    if (showBox.classList.contains('scrolly')) chapters[i].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
-    else showBox.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+    showBox.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
   }));
   function open(shot, alt) { dlgImg.src = files(shot).src; dlgImg.alt = alt; dlg.showModal(); }
   document.getElementById('showZoom').addEventListener('click', () => open(tabs[active].dataset.shot, img.alt));
