@@ -10,6 +10,9 @@
   if (lang !== 'en' && lang !== 'tr') lang = /^en\b/i.test(navigator.language || '') ? 'en' : 'tr';
   window.__lang = lang;
   document.documentElement.lang = lang;
+  // English: the page is written in Turkish and switched once the body is parsed; until then the captions stay hidden,
+  // so the opening card does not change size (a layout shift) right after the first paint.
+  if (lang === 'en') document.documentElement.classList.add('en-pending');
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -62,6 +65,7 @@
   :focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; border-radius: var(--r-sm); }
   .skip { position: absolute; left: -999px; top: 8px; z-index: 50; background: var(--bg2); padding: 8px 14px; border-radius: var(--r); }
   .skip:focus { left: 8px; }
+  html.en-pending #captions { visibility: hidden; }
 
   /* Stage: the 3D scenes live in fixed, full-screen frames behind the scrolling content. */
   .stage { position: fixed; inset: 0; z-index: 0; background: var(--bg); }
@@ -893,7 +897,7 @@
     document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
   }
   window.__applyLang = apply;
-  if (window.__lang === 'en') apply('en'); else document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === 'tr')));
+  if (window.__lang === 'en') { apply('en'); document.documentElement.classList.remove('en-pending'); } else document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === 'tr')));
   document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => {
     const lang = b.dataset.lang;
     if (lang === window.__lang) return;

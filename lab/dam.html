@@ -19,6 +19,8 @@
   .note { position: fixed; top: 60px; left: 12px; font-size: 12px; color: #9fb0c9; z-index: 2; opacity: 0; transition: opacity .4s; }
   .embed .top, .embed .bar { display: none; }
   .embed .note { top: auto; bottom: 14px; left: auto; right: 16px; }
+  /* Phones: the corner at the bottom is taken by the page's "Grafiğe geç" button, so the note sits at the top right. */
+  @media (max-width: 700px) { .embed .note { top: 58px; bottom: auto; right: 14px; } }
 </style>
 <script type="importmap">
 { "imports": {
