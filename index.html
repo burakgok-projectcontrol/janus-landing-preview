@@ -463,10 +463,10 @@
   }
 
   /* Opening: Janus drawn as a blueprint — past (left, solid), today (centre), future (right, projected). */
-  #intro { position: fixed; inset: 0; z-index: 40; background: #0a1f44; display: grid; place-items: center; overflow: hidden; transition: opacity .8s ease; cursor: pointer; }
+  #intro { position: fixed; inset: 0; z-index: 40; background: var(--bg); display: grid; place-items: center; overflow: hidden; transition: opacity .8s ease; cursor: pointer; }
   #intro::before { content: ""; position: absolute; inset: 0; opacity: 0; animation: fadeIn .8s ease forwards;
-    background-image: linear-gradient(rgba(120, 180, 255, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .07) 1px, transparent 1px),
-      linear-gradient(rgba(120, 180, 255, .15) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .15) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(120, 180, 255, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .035) 1px, transparent 1px),
+      linear-gradient(rgba(120, 180, 255, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 180, 255, .08) 1px, transparent 1px);
     background-size: 32px 32px, 32px 32px, 160px 160px, 160px 160px; background-position: center; }
   #intro.out { opacity: 0; pointer-events: none; }
   #intro.hold *, #intro.hold::before, #intro.hold::after { animation-play-state: paused !important; }
@@ -481,9 +481,24 @@
   }
   @keyframes introPush { from { transform: scale(1); } to { transform: scale(1.05); } }
   #intro svg { width: 100vw; height: 100vh; position: relative; overflow: visible; } /* viewBox keeps it fitted (meet) */
-  #intro .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw var(--t, 1.4s) cubic-bezier(.5, 0, .2, 1) var(--d, 0s) forwards; }
+  #intro .draw { stroke-dasharray: 1 2; stroke-dashoffset: 1.02; animation: draw var(--t, 1.4s) cubic-bezier(.5, 0, .2, 1) var(--d, 0s) forwards; }
   #intro .dash { stroke-dasharray: .012 .01; }
   #intro .fade { opacity: 0; animation: fadeIn var(--t, .7s) ease var(--d, 0s) forwards; }
+  #intro .growx { transform: scaleX(0); transform-box: fill-box; transform-origin: left; animation: growx .6s cubic-bezier(.3, 0, .2, 1) var(--d, 0s) forwards; }
+  @keyframes growx { to { transform: scaleX(1); } }
+  /* Future: the missed paths' dashes march outwards; a light runs along the main arrow; the target flashes on the hit. */
+  #intro .miss { opacity: 0; animation: fadeIn .5s ease var(--d, 0s) forwards, march 1.4s linear var(--d, 0s) infinite; }
+  @keyframes march { to { stroke-dashoffset: -28; } }
+  #intro .flowlight { opacity: 0; stroke-dasharray: .08 .92; stroke-dashoffset: 1; animation: fadeIn .3s ease var(--d, 0s) forwards, lightrun 1.5s linear var(--d, 0s) infinite; }
+  @keyframes lightrun { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+  #intro .burst { opacity: 0; transform-box: fill-box; transform-origin: center; animation: burst .9s ease-out var(--d, 0s) forwards; }
+  @keyframes burst { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(2); } }
+  /* Sparks around the target: rise and fade, staggered. */
+  #intro .spark { opacity: 0; transform-box: fill-box; animation: spark var(--t, 3s) ease-out var(--d, 4s) infinite; }
+  @keyframes spark { 0% { opacity: 0; transform: translateY(0); } 25% { opacity: .95; } 100% { opacity: 0; transform: translateY(-46px); } }
+  #intro .target { opacity: 0; transform-box: fill-box; transform-origin: center; animation: fadeIn .6s ease 4.8s forwards, pulse 2.2s ease-in-out 5.4s infinite; }
+  #intro svg.v { display: none; }
+  #intro svg.defs { position: absolute; width: 0; height: 0; }
   #intro .grow { transform: scaleY(0); transform-box: fill-box; transform-origin: bottom; animation: grow .6s cubic-bezier(.3, 0, .2, 1) var(--d, 0s) forwards; }
   /* One SVG user unit in CSS px (the SVG is 1200×700, fitted with "meet" into the viewport). */
   #intro { --u: min(calc(100vw / 1200), calc(100vh / 700)); }
@@ -494,6 +509,15 @@
   #intro .heads .scan { position: absolute; left: calc(50vw - 600 * var(--u)); top: calc(50vh - 620 * var(--u)); width: calc(1200 * var(--u)); height: calc(1200 * var(--u));
     border: 2px solid #22d3ee; border-radius: 50%; opacity: .85; transform: scale(0); will-change: transform, opacity;
     animation: scanGrow 2.6s cubic-bezier(.45, 0, .25, 1) .9s forwards, scanOut .6s linear 2.9s forwards; }
+  /* Portrait screens (phones): the upright composition, time running from the bottom (past) to the top (future). The
+     bust keeps its own position rule: its "today" point sits on the centre of the 600×1200 drawing. */
+  @media (max-aspect-ratio: 4/5) {
+    #intro svg.h { display: none; }
+    #intro svg.v { display: block; }
+    #intro { --u: min(calc(100vw / 600), calc(100vh / 1200)); }
+    #intro .heads img { left: calc(50vw - 244.2 * var(--u)); top: calc(50vh - 222.9 * var(--u)); width: calc(520 * var(--u)); height: calc(495 * var(--u)); }
+    #intro .heads .scan { top: calc(50vh - 600 * var(--u)); }
+  }
   @keyframes bustReveal { to { clip-path: circle(110% at 46.96% 45.03%); } }
   @keyframes scanGrow { to { transform: scale(1); } }
   @keyframes scanOut { to { opacity: 0; } }
@@ -504,9 +528,13 @@
   @keyframes grow { to { transform: scaleY(1); } }
   @keyframes headsOut { to { opacity: .12; } }
   @keyframes pulse { 50% { transform: scale(1.35); } }
-  @media (prefers-reduced-motion: reduce) { #intro *, #intro::before, #intro::after { animation-duration: .01s !important; animation-delay: 0s !important; } }
+  @media (prefers-reduced-motion: reduce) { #intro *, #intro::before, #intro::after { animation-duration: .01s !important; animation-delay: 0s !important; }
+    #intro .core, #intro .target { animation: fadeIn .01s forwards !important; } #intro .spark, #intro .flowlight, #intro .burst { display: none; }
+    #intro .miss { animation: fadeIn .01s forwards !important; } }
   #intro.quick *, #intro.quick::before, #intro.quick::after { animation-duration: .01s !important; animation-delay: 0s !important; } /* reload: jump to the last frame */
-  #intro.quick .core { animation: fadeIn .01s forwards !important; }
+  #intro.quick .core, #intro.quick .target { animation: fadeIn .01s forwards !important; }
+  #intro.quick .spark, #intro.quick .flowlight, #intro.quick .burst { display: none; }
+  #intro.quick .miss { animation: fadeIn .01s forwards !important; }
   #intro.quick .skipnote { display: none; }
   /* Security: three nested layers around the data (company, role, audit), with the same copy as a numbered list. */
   .lay-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--s-8); align-items: center; margin-top: var(--s-7); }
@@ -623,34 +651,53 @@
     <img src="assets/janus/bust.webp" alt="" decoding="async">
     <i class="scan"></i>
   </div>
-  <svg viewBox="0 0 1200 700" aria-hidden="true">
+  <svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
     <defs>
       <linearGradient id="ifut" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
+      <linearGradient id="iarrow" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset=".6" stop-color="#a78bfa"/><stop offset="1" stop-color="#fbbf24"/></linearGradient>
+      <radialGradient id="itgt"><stop offset="0" stop-color="#fbbf24" stop-opacity=".55"/><stop offset="1" stop-color="#fbbf24" stop-opacity="0"/></radialGradient>
       <radialGradient id="iglowg"><stop offset="0" stop-color="#22d3ee" stop-opacity=".9"/><stop offset=".45" stop-color="#22d3ee" stop-opacity=".45"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
     </defs>
+  </svg>
+  <svg class="h" viewBox="0 0 1200 700" aria-hidden="true">
     <!-- sheet frame and construction geometry -->
     <g fill="none" stroke="#cfe8ff" stroke-opacity=".55">
-      <rect class="draw" pathLength="1" style="--d:.1s;--t:1.6s" x="24" y="24" width="1152" height="652" stroke-width="2"/>
       <circle class="draw" pathLength="1" style="--d:.4s;--t:1.6s" cx="600" cy="330" r="300" stroke-width="1"/>
       <circle class="draw" pathLength="1" style="--d:.6s;--t:1.4s" cx="600" cy="330" r="190" stroke-width="1" stroke-opacity=".35"/>
       <g class="fade" style="--d:1.2s" stroke-width="1" stroke-opacity=".5"><line x1="900.0" y1="330.0" x2="914.0" y2="330.0" /><line x1="895.4423335835097" y1="382.0944097454818" x2="909.2296424840736" y2="384.525482200271" /><line x1="881.9078164884656" y1="432.60595987907124" x2="895.0635145912606" y2="437.3942380067612" /><line x1="859.807687475051" y1="479.99988509617674" x2="871.9320462238868" y2="486.9998797339983" /><line x1="829.8134466486295" y1="522.8361473880806" x2="840.5380741588988" y2="531.8351675995243" /><line x1="792.8364523032191" y1="559.813190794411" x2="801.835486744036" y2="570.5378063648168" /><line x1="750.0002298075585" y1="589.8074884557402" x2="757.0002405319113" y2="601.9318379170081" /><line x1="702.6063339128332" y1="611.9076803511537" x2="707.394629495432" y2="625.0633721008741" /><line x1="652.0948017368165" y1="625.4422644646527" x2="654.5258924845346" y2="639.2295701396698" /><line x1="600.000398038469" y1="629.999999999736" x2="600.0004166135975" y2="643.9999999997236" /><line x1="547.9059822459444" y1="625.4424027018467" x2="545.4749280840886" y2="639.2297148279329" /><line x1="497.39441415487124" y1="611.9079526252815" x2="492.6061534820986" y2="625.0636570811279" /><line x1="450.00045961546925" y1="589.8078864939043" x2="443.00048106419115" y2="601.9322545302866" /><line x1="407.1641575273974" y1="559.8137025024434" x2="398.1651515453426" y2="570.5383419525574" /><line x1="370.18706506021215" y1="522.8367572180181" x2="359.4624614296887" y2="531.8358058881922" /><line x1="340.1927105640278" y1="480.0005745186763" x2="328.06837039034906" y2="487.00060132954786" /><line x1="318.0924557866548" y1="432.60670794641453" x2="304.936770390032" y2="437.3950209839139" /><line x1="304.5578046547244" y1="382.09519372805937" x2="290.77050220527826" y2="384.5263027687021" /><line x1="300.0000000010562" y1="330.000796076938" x2="286.0000000011055" y2="330.00083322719513" /><line x1="304.5575281803364" y1="277.90637423746244" x2="290.77021282875216" y2="275.47533836854404" /><line x1="318.09191123839906" y1="227.39478818899445" x2="304.9362004295243" y2="222.6065449711475" /><line x1="340.19191448769965" y1="180.00080432737903" x2="328.0675371637923" y2="173.00084186265673" /><line x1="370.1860416441472" y1="137.16446244321466" x2="359.46139025420746" y2="128.1654706905647" /><line x1="407.1629378675225" y1="100.18732091523975" x2="398.16387496800684" y2="89.46272922461762" /><line x1="449.9990807704699" y1="70.1929095842533" x2="442.9990378730918" y2="58.06857869818509" /><line x1="497.3929180201849" y1="48.09259192495932" x2="492.6045875277935" y2="34.93691288145743" /><line x1="547.9044142807894" y1="34.55787377462167" x2="545.4732869472263" y2="20.770574550770675" /><line x1="599.9988058845929" y1="30.00000000237651" x2="599.9987501592072" y2="16.00000000248741" /><line x1="652.0932337709278" y1="34.55745906303969" x2="654.5242513469044" y2="20.77014048598153" /><line x1="702.6048377767016" y1="48.09177510257575" x2="707.3930635396143" y2="34.936057940695946" /><line x1="749.9988509604469" y1="70.191715469761" x2="756.9987973386012" y2="58.06732885834987" /><line x1="792.8352326406284" y1="100.18578579114228" x2="801.8342101638577" y2="89.4611224613956" /><line x1="829.8124232293279" y1="137.16263295340227" x2="840.5370029800299" y2="128.16355582456103" /><line x1="859.806891395064" y1="179.99873605988037" x2="871.9312129935004" y2="172.9986770760081" /><line x1="881.9072719362398" y1="227.3925439869647" x2="895.0629446265976" y2="222.60419603968973" /><line x1="895.4420571049611" y1="277.90402228973005" x2="909.2293531031926" y2="275.4728766632508" /></g>
-      <line class="draw" pathLength="1" style="--d:.5s" x1="80" y1="560" x2="1120" y2="560" stroke-width="1.2"/>
+      <line class="draw" pathLength="1" style="--d:.5s" x1="80" y1="560" x2="420" y2="560" stroke-width="1.2"/>
     </g>
     <!-- today: the shared axis -->
     <line class="draw dash" pathLength="1" style="--d:1.6s;--t:1s" x1="600" y1="40" x2="600" y2="660" stroke="#ffffff" stroke-opacity=".8" stroke-width="1.6"/>
-    <text class="fade" style="--d:2.6s" x="600" y="72" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="20" font-weight="700" letter-spacing="4" data-en="TODAY">BUGÜN</text>
+    <text class="fade" style="--d:2.6s" x="600" y="72" text-anchor="middle" fill="#ffffff" font-family="'Space Grotesk', system-ui, sans-serif" font-size="20" font-weight="700" letter-spacing="4" data-en="TODAY">BUGÜN</text>
     <!-- past: measured, solid -->
     <g><rect class="grow" style="--d:3.00s" x="96" y="542" width="24" height="18" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.10s" x="136" y="526" width="24" height="34" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.20s" x="176" y="502" width="24" height="58" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.30s" x="216" y="468" width="24" height="92" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.40s" x="256" y="430" width="24" height="130" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.50s" x="296" y="392" width="24" height="168" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.60s" x="336" y="364" width="24" height="196" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/></g>
     <path class="draw" pathLength="1" style="--d:3.2s;--t:1.2s" d="M90 556 C180 552 260 520 330 440 C350 412 362 380 370 360" fill="none" stroke="#22d3ee" stroke-width="3"/>
-    <text class="fade" style="--d:3.4s" x="96" y="610" fill="#e6edf7" font-family="system-ui, sans-serif" font-size="26" font-weight="800" letter-spacing="3" data-en="PAST">GEÇMİŞ</text>
+    <text class="fade" style="--d:3.4s" x="96" y="610" fill="#e6edf7" font-family="'Space Grotesk', system-ui, sans-serif" font-size="26" font-weight="800" letter-spacing="3" data-en="PAST">GEÇMİŞ</text>
     <text class="fade" style="--d:3.6s" x="96" y="638" fill="#9fb0c9" font-family="system-ui, sans-serif" font-size="16" data-en="actual · measured · on record">gerçekleşen · ölçülen · kayıt altında</text>
-    <!-- future: projected, dashed cone -->
-    <g fill="none" stroke-width="2.4" stroke-linecap="round">
-      <path class="draw" pathLength="1" style="--d:3.8s;--t:1.3s" d="M830 360 C900 300 980 240 1110 214" stroke="url(#ifut)" stroke-dasharray="10 9"/>
-      <path class="draw" pathLength="1" style="--d:4.0s;--t:1.3s" d="M830 360 C910 330 990 300 1110 290" stroke="#a78bfa" stroke-opacity=".6"/>
-      <path class="draw" pathLength="1" style="--d:4.0s;--t:1.3s" d="M830 360 C900 270 980 190 1110 150" stroke="#a78bfa" stroke-opacity=".6"/>
-    </g>
-    <text class="fade" style="--d:4.2s" x="1104" y="610" text-anchor="end" fill="#c4b5fd" font-family="system-ui, sans-serif" font-size="26" font-weight="800" letter-spacing="3" data-en="FUTURE">GELECEK</text>
+    <!-- future: possible paths scatter as dashed arrows and miss; the one controlled path flows, lit, into the target -->
+    <path class="miss" style="--d:3.70s" d="M830 420 C900 380 960 300 990 160" fill="none" stroke="#c4b5fd" stroke-opacity=".75" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="7 7"/>
+    <path class="fade" style="--d:4.20s" transform="translate(990 160) rotate(-78) scale(0.8800000000000001)" d="M0 0 L-14 -7 L-10 0 L-14 7 Z" fill="none" stroke="#c4b5fd" stroke-width="1.6" stroke-linejoin="round"/>
+    <path class="miss" style="--d:3.82s" d="M830 420 C920 430 1040 420 1160 380" fill="none" stroke="#9fb0c9" stroke-opacity=".75" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="2 5"/>
+    <path class="fade" style="--d:4.32s" transform="translate(1160 380) rotate(-18) scale(0.8800000000000001)" d="M0 0 L-14 -7 L-10 0 L-14 7 Z" fill="none" stroke="#9fb0c9" stroke-width="1.6" stroke-linejoin="round"/>
+    <path class="miss" style="--d:3.94s" d="M830 420 C900 360 1000 300 1170 300" fill="none" stroke="#a5b4fc" stroke-opacity=".75" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="12 6 4 6"/>
+    <path class="fade" style="--d:4.44s" transform="translate(1170 300) rotate(0) scale(0.8800000000000001)" d="M0 0 L-14 -7 L-10 0 L-14 7 Z" fill="none" stroke="#a5b4fc" stroke-width="1.6" stroke-linejoin="round"/>
+    <path class="miss" style="--d:4.06s" d="M830 420 C880 330 900 230 880 130" fill="none" stroke="#9fb0c9" stroke-opacity=".75" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="4 3"/>
+    <path class="fade" style="--d:4.56s" transform="translate(880 130) rotate(-101) scale(0.8800000000000001)" d="M0 0 L-14 -7 L-10 0 L-14 7 Z" fill="none" stroke="#9fb0c9" stroke-width="1.6" stroke-linejoin="round"/>
+    <path class="miss" style="--d:4.18s" d="M830 420 C930 470 1040 520 1140 500" fill="none" stroke="#c4b5fd" stroke-opacity=".75" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="1 6"/>
+    <path class="fade" style="--d:4.68s" transform="translate(1140 500) rotate(-11) scale(0.8800000000000001)" d="M0 0 L-14 -7 L-10 0 L-14 7 Z" fill="none" stroke="#c4b5fd" stroke-width="1.6" stroke-linejoin="round"/>
+    <circle class="target" cx="1100" cy="186" r="78" fill="url(#itgt)"/>
+    <circle class="target" cx="1100" cy="186" r="34.0" fill="none" stroke="#fbbf24" stroke-width="2.6" stroke-opacity="1"/>
+    <circle class="target" cx="1100" cy="186" r="23.1" fill="none" stroke="#fde68a" stroke-width="2" stroke-opacity="0.85"/>
+    <circle class="target" cx="1100" cy="186" r="12.9" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-opacity="0.9"/>
+    <circle class="target" cx="1100" cy="186" r="5.4" fill="#fff7d6"/>
+    <path class="draw" pathLength="1" style="--d:3.95s;--t:1.1s" d="M830 420 C905 405 990 330 1076 214" fill="none" stroke="url(#iarrow)" stroke-width="18" stroke-linecap="round" stroke-opacity=".24"/>
+    <path class="draw" pathLength="1" style="--d:3.95s;--t:1.1s" d="M830 420 C905 405 990 330 1076 214" fill="none" stroke="url(#iarrow)" stroke-width="5" stroke-linecap="round"/>
+    <path class="flowlight" pathLength="1" style="--d:5.05s" d="M830 420 C905 405 990 330 1076 214" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+    <path class="fade" style="--d:4.95s" transform="translate(1078 212) rotate(-54) scale(1.375)" d="M0 0 L-14 -7 L-10 0 L-14 7 Z" fill="#fbbf24"/>
+    <circle class="burst" style="--d:5.0s" cx="1100" cy="186" r="34" fill="none" stroke="#fde68a" stroke-width="3"/>
+    <g aria-hidden="true"><circle class="spark" style="--d:5.00s;--t:3.0s" cx="1060" cy="140" r="2" fill="#fde68a"/><circle class="spark" style="--d:5.20s;--t:2.8s" cx="1150" cy="230" r="1.8" fill="#c4b5fd"/><circle class="spark" style="--d:5.40s;--t:3.2s" cx="1130" cy="120" r="2.2" fill="#fde68a"/><circle class="spark" style="--d:5.10s;--t:2.6s" cx="1040" cy="260" r="1.6" fill="#67e8f9"/><circle class="spark" style="--d:5.60s;--t:3.0s" cx="1165" cy="170" r="1.6" fill="#fde68a"/><circle class="spark" style="--d:4.60s;--t:3.2s" cx="980" cy="360" r="1.8" fill="#c4b5fd"/></g>
+    <text class="fade" style="--d:4.2s" x="1104" y="610" text-anchor="end" fill="#c4b5fd" font-family="'Space Grotesk', system-ui, sans-serif" font-size="26" font-weight="800" letter-spacing="3" data-en="FUTURE">GELECEK</text>
     <text class="fade" style="--d:4.4s" x="1104" y="638" text-anchor="end" fill="#9fb0c9" font-family="system-ui, sans-serif" font-size="16" data-en="projection · forecast · decision">projeksiyon · tahmin · karar</text>
     <!-- the two faces: line drawing traced from the user's photo of a marble Janus bust;
          the elder (left, past) in white, the youth (right, future) in cyan to violet; it is revealed outwards from "today" -->
@@ -666,8 +713,60 @@
       <path class="draw" pathLength="1" style="--d:5.7s;--t:.7s" d="M52 36 A26 26 0 0 0 52 84" stroke="#e6edf7" stroke-width="2.5" stroke-opacity=".4"/>
       <path class="fade" style="--d:5.8s" d="M68 36 A26 26 0 0 1 68 84" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="3 5" stroke-opacity=".7"/>
     </g>
-    <text class="fade" style="--d:6.2s" x="600" y="508" text-anchor="middle" fill="#e6edf7" font-family="system-ui, sans-serif" font-size="46" font-weight="800" letter-spacing="2">Janus</text>
+    <text class="fade" style="--d:6.2s" x="600" y="508" text-anchor="middle" fill="#e6edf7" font-family="'Space Grotesk', system-ui, sans-serif" font-size="46" font-weight="800" letter-spacing="2">Janus</text>
     <text class="fade" style="--d:6.5s" x="600" y="544" text-anchor="middle" fill="#a9bad3" font-family="system-ui, sans-serif" font-size="20" data-en="Measure the Past, Manage the Future">Geçmişi Ölç, Geleceği Yönet</text>
+  </svg>
+  <svg class="v" viewBox="0 0 600 1200" aria-hidden="true">
+    <g fill="none" stroke="#cfe8ff" stroke-opacity=".5">
+      <circle class="draw" pathLength="1" style="--d:.4s;--t:1.6s" cx="300" cy="600" r="290" stroke-width="1.2"/>
+      <circle class="draw" pathLength="1" style="--d:.6s;--t:1.4s" cx="300" cy="600" r="190" stroke-width="1" stroke-opacity=".35"/>
+      <line class="draw" pathLength="1" style="--d:.5s" x1="40" y1="1090" x2="560" y2="1090" stroke-width="1.2"/>
+    </g>
+    <!-- today: the shared axis, across -->
+    <line class="draw dash" pathLength="1" style="--d:1.6s;--t:1s" x1="10" y1="600" x2="590" y2="600" stroke="#ffffff" stroke-opacity=".8" stroke-width="2"/>
+    <g class="fade" style="--d:2.6s"><rect x="466" y="578" width="122" height="44" rx="4" fill="#07111F" stroke="#ffffff" stroke-opacity=".5"/>
+      <text x="527" y="608" text-anchor="middle" fill="#ffffff" font-family="'Space Grotesk', system-ui, sans-serif" font-size="24" font-weight="700" letter-spacing="3" data-en="TODAY">BUGÜN</text></g>
+    <!-- past, at the bottom: the measured periods as an ordinary bar chart, the measured curve over them -->
+    <g><rect class="grow" style="--d:3.00s" x="60" y="1065" width="40" height="25" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.10s" x="128" y="1047" width="40" height="43" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.20s" x="196" y="1020" width="40" height="70" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.30s" x="264" y="987" width="40" height="103" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.40s" x="332" y="953" width="40" height="137" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.50s" x="400" y="923" width="40" height="167" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.60s" x="468" y="900" width="40" height="190" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/></g>
+    <path class="draw" pathLength="1" style="--d:3.2s;--t:1.2s" d="M48 1084 C120 1078 180 1050 230 1020 C300 978 380 940 440 912 C480 894 512 884 548 876" fill="none" stroke="#22d3ee" stroke-width="4"/>
+    <text class="fade" style="--d:3.4s" x="40" y="1140" fill="#e6edf7" font-family="'Space Grotesk', system-ui, sans-serif" font-size="40" font-weight="700" letter-spacing="3" data-en="PAST">GEÇMİŞ</text>
+    <text class="fade" style="--d:3.6s" x="40" y="1176" fill="#9fb0c9" font-family="system-ui, sans-serif" font-size="24" data-en="actual · measured · on record">gerçekleşen · ölçülen · kayıt altında</text>
+    <!-- future, at the top: possible paths scatter and miss; the controlled path flows, lit, into the target -->
+    <path class="miss" style="--d:3.70s" d="M300 372 C240 300 170 240 90 210" fill="none" stroke="#c4b5fd" stroke-opacity=".75" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="7 7"/>
+    <path class="fade" style="--d:4.20s" transform="translate(90 210) rotate(-159) scale(1.2000000000000002)" d="M0 0 L-14 -7 L-10 0 L-14 7 Z" fill="none" stroke="#c4b5fd" stroke-width="1.6" stroke-linejoin="round"/>
+    <path class="miss" style="--d:3.82s" d="M300 372 C270 290 250 220 230 146" fill="none" stroke="#9fb0c9" stroke-opacity=".75" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="2 5"/>
+    <path class="fade" style="--d:4.32s" transform="translate(230 146) rotate(-105) scale(1.2000000000000002)" d="M0 0 L-14 -7 L-10 0 L-14 7 Z" fill="none" stroke="#9fb0c9" stroke-width="1.6" stroke-linejoin="round"/>
+    <path class="miss" style="--d:3.94s" d="M300 372 C360 330 470 320 570 300" fill="none" stroke="#a5b4fc" stroke-opacity=".75" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="12 6 4 6"/>
+    <path class="fade" style="--d:4.44s" transform="translate(570 300) rotate(-11) scale(1.2000000000000002)" d="M0 0 L-14 -7 L-10 0 L-14 7 Z" fill="none" stroke="#a5b4fc" stroke-width="1.6" stroke-linejoin="round"/>
+    <path class="miss" style="--d:4.06s" d="M300 372 C330 280 470 230 560 250" fill="none" stroke="#9fb0c9" stroke-opacity=".75" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="4 3"/>
+    <path class="fade" style="--d:4.56s" transform="translate(560 250) rotate(12) scale(1.2000000000000002)" d="M0 0 L-14 -7 L-10 0 L-14 7 Z" fill="none" stroke="#9fb0c9" stroke-width="1.6" stroke-linejoin="round"/>
+    <path class="miss" style="--d:4.18s" d="M300 372 C310 300 350 230 372 152" fill="none" stroke="#c4b5fd" stroke-opacity=".75" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="1 6"/>
+    <path class="fade" style="--d:4.68s" transform="translate(372 152) rotate(-74) scale(1.2000000000000002)" d="M0 0 L-14 -7 L-10 0 L-14 7 Z" fill="none" stroke="#c4b5fd" stroke-width="1.6" stroke-linejoin="round"/>
+    <circle class="target" cx="478" cy="168" r="87" fill="url(#itgt)"/>
+    <circle class="target" cx="478" cy="168" r="38.0" fill="none" stroke="#fbbf24" stroke-width="2.6" stroke-opacity="1"/>
+    <circle class="target" cx="478" cy="168" r="25.8" fill="none" stroke="#fde68a" stroke-width="2" stroke-opacity="0.85"/>
+    <circle class="target" cx="478" cy="168" r="14.4" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-opacity="0.9"/>
+    <circle class="target" cx="478" cy="168" r="6.1" fill="#fff7d6"/>
+    <path class="draw" pathLength="1" style="--d:3.95s;--t:1.1s" d="M300 372 C330 300 390 240 446 194" fill="none" stroke="url(#iarrow)" stroke-width="22" stroke-linecap="round" stroke-opacity=".24"/>
+    <path class="draw" pathLength="1" style="--d:3.95s;--t:1.1s" d="M300 372 C330 300 390 240 446 194" fill="none" stroke="url(#iarrow)" stroke-width="6.5" stroke-linecap="round"/>
+    <path class="flowlight" pathLength="1" style="--d:5.05s" d="M300 372 C330 300 390 240 446 194" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+    <path class="fade" style="--d:4.95s" transform="translate(448 193) rotate(-38) scale(1.875)" d="M0 0 L-14 -7 L-10 0 L-14 7 Z" fill="#fbbf24"/>
+    <circle class="burst" style="--d:5.0s" cx="478" cy="168" r="38" fill="none" stroke="#fde68a" stroke-width="3"/>
+    <g aria-hidden="true"><circle class="spark" style="--d:5.00s;--t:3.0s" cx="430" cy="120" r="2.6" fill="#fde68a"/><circle class="spark" style="--d:5.20s;--t:2.8s" cx="540" cy="200" r="2.4" fill="#c4b5fd"/><circle class="spark" style="--d:5.40s;--t:3.2s" cx="520" cy="100" r="2.8" fill="#fde68a"/><circle class="spark" style="--d:5.10s;--t:2.6s" cx="410" cy="230" r="2.2" fill="#67e8f9"/><circle class="spark" style="--d:5.60s;--t:3.0s" cx="570" cy="150" r="2.2" fill="#fde68a"/><circle class="spark" style="--d:4.60s;--t:3.2s" cx="360" cy="300" r="2.4" fill="#c4b5fd"/></g>
+    <text class="fade" style="--d:4.2s" x="30" y="76" fill="#c4b5fd" font-family="'Space Grotesk', system-ui, sans-serif" font-size="40" font-weight="700" letter-spacing="3" data-en="FUTURE">GELECEK</text>
+    <text class="fade" style="--d:4.4s" x="30" y="112" fill="#9fb0c9" font-family="system-ui, sans-serif" font-size="24" data-en="projection · forecast · decision">projeksiyon · tahmin · karar</text>
+    <!-- today's core and the mark -->
+    <circle cx="300" cy="600" r="34" fill="url(#iglowg)" class="core"/>
+    <circle cx="300" cy="600" r="10" fill="#ecfeff" class="core"/>
+    <g transform="translate(300 600) scale(2.4) translate(-60 -60)" fill="none" stroke-linecap="round">
+      <circle class="fade" style="--d:5.4s" cx="60" cy="60" r="48" stroke="#e6edf7" stroke-width=".8" stroke-opacity=".2"/>
+      <path class="draw" pathLength="1" style="--d:5.3s;--t:1s" d="M50 16 A44 44 0 0 0 50 104" stroke="#e6edf7" stroke-width="9"/>
+      <path class="draw" pathLength="1" style="--d:5.45s;--t:1s" d="M70 16 A44 44 0 0 1 70 104" stroke="url(#ifut)" stroke-width="9"/>
+      <path class="draw" pathLength="1" style="--d:5.7s;--t:.7s" d="M52 36 A26 26 0 0 0 52 84" stroke="#e6edf7" stroke-width="2.5" stroke-opacity=".4"/>
+      <path class="fade" style="--d:5.8s" d="M68 36 A26 26 0 0 1 68 84" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="3 5" stroke-opacity=".7"/>
+    </g>
+    <text class="fade" style="--d:6.2s" x="300" y="806" text-anchor="middle" fill="#e6edf7" font-family="'Space Grotesk', system-ui, sans-serif" font-size="62" font-weight="700" letter-spacing="2">Janus</text>
+    <text class="fade" style="--d:6.5s" x="300" y="852" text-anchor="middle" fill="#a9bad3" font-family="system-ui, sans-serif" font-size="30" data-en="Measure the Past, Manage the Future">Geçmişi Ölç, Geleceği Yönet</text>
   </svg>
   <span class="skipnote" data-en="Click or scroll to skip">Geçmek için tıklayın veya kaydırın</span>
 </div>
