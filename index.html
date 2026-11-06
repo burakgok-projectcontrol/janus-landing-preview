@@ -300,6 +300,17 @@
     background-size: 32px 32px, 32px 32px, 160px 160px, 160px 160px; transform: translate3d(0, var(--par, 0px), 0); will-change: transform; }
   /* The grid moves with the scroll at a slower rate (set by script on wide screens; none with reduced motion). */
   .after > * { position: relative; }
+  /* Seams: the scenes' plan / earned / actual curves return between sections, drawn left to right as the boundary
+     scrolls up the screen (--sp, set by the scroll painter; drawn whole without it, e.g. with reduced motion). */
+  .seam { position: relative; height: 0; z-index: 1; pointer-events: none; }
+  .seam svg { position: absolute; left: 0; top: -80px; width: 100%; height: 160px; overflow: visible;
+    clip-path: inset(-10px calc((1 - var(--sp, 1)) * 100%) -10px 0); }
+  .seam path { fill: none; stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  .seam .pv { stroke: rgba(230, 237, 247, .4); stroke-dasharray: 7 7; }
+  .seam .ev { stroke: var(--cyan); opacity: .75; }
+  .seam .ac { stroke: var(--amber); opacity: .65; }
+  .seam .meet { stroke: #ecfeff; stroke-width: 10; opacity: calc((var(--sp, 1) - .92) * 12.5); filter: drop-shadow(0 0 6px var(--cyan)); }
+  @media (max-width: 860px) { .seam svg { top: -50px; height: 100px; } }
   .after > .hand { position: absolute; top: 0; left: 0; width: 100%; height: 84px; pointer-events: none; z-index: 0; overflow: visible;
     clip-path: inset(0 calc((1 - var(--hand, 1)) * 100%) 0 0); }
   .hand path { fill: none; stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
@@ -515,7 +526,7 @@
     #intro svg.h { display: none; }
     #intro svg.v { display: block; }
     #intro { --u: min(calc(100vw / 600), calc(100vh / 1200)); }
-    #intro .heads img { left: calc(50vw - 244.2 * var(--u)); top: calc(50vh - 222.9 * var(--u)); width: calc(520 * var(--u)); height: calc(495 * var(--u)); }
+    #intro .heads img { left: calc(50vw - 206.6 * var(--u)); top: calc(50vh - 188.7 * var(--u)); width: calc(440 * var(--u)); height: calc(419 * var(--u)); }
     #intro .heads .scan { top: calc(50vh - 600 * var(--u)); }
   }
   @keyframes bustReveal { to { clip-path: circle(110% at 46.96% 45.03%); } }
@@ -722,13 +733,13 @@
       <circle class="draw" pathLength="1" style="--d:.6s;--t:1.4s" cx="300" cy="600" r="190" stroke-width="1" stroke-opacity=".35"/>
       <line class="draw" pathLength="1" style="--d:.5s" x1="40" y1="1090" x2="560" y2="1090" stroke-width="1.2"/>
     </g>
-    <!-- today: the shared axis, across -->
-    <line class="draw dash" pathLength="1" style="--d:1.6s;--t:1s" x1="10" y1="600" x2="590" y2="600" stroke="#ffffff" stroke-opacity=".8" stroke-width="2"/>
-    <g class="fade" style="--d:2.6s"><rect x="466" y="578" width="122" height="44" rx="4" fill="#07111F" stroke="#ffffff" stroke-opacity=".5"/>
-      <text x="527" y="608" text-anchor="middle" fill="#ffffff" font-family="'Space Grotesk', system-ui, sans-serif" font-size="24" font-weight="700" letter-spacing="3" data-en="TODAY">BUGÜN</text></g>
+    <!-- today: the line under the bust (the past rises to it, the future leaves above it), labelled in its middle -->
+    <line class="draw dash" pathLength="1" style="--d:1.6s;--t:1s" x1="10" y1="860" x2="590" y2="860" stroke="#ffffff" stroke-opacity=".8" stroke-width="2"/>
+    <g class="fade" style="--d:2.6s"><rect x="239" y="838" width="122" height="44" rx="4" fill="#07111F" stroke="#ffffff" stroke-opacity=".5"/>
+      <text x="300" y="868" text-anchor="middle" fill="#ffffff" font-family="'Space Grotesk', system-ui, sans-serif" font-size="24" font-weight="700" letter-spacing="3" data-en="TODAY">BUGÜN</text></g>
     <!-- past, at the bottom: the measured periods as an ordinary bar chart, the measured curve over them -->
     <g><rect class="grow" style="--d:3.00s" x="60" y="1065" width="40" height="25" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.10s" x="128" y="1047" width="40" height="43" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.20s" x="196" y="1020" width="40" height="70" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.30s" x="264" y="987" width="40" height="103" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.40s" x="332" y="953" width="40" height="137" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.50s" x="400" y="923" width="40" height="167" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/><rect class="grow" style="--d:3.60s" x="468" y="900" width="40" height="190" fill="rgba(34,211,238,.28)" stroke="#e6edf7" stroke-width="1.2"/></g>
-    <path class="draw" pathLength="1" style="--d:3.2s;--t:1.2s" d="M48 1084 C120 1078 180 1050 230 1020 C300 978 380 940 440 912 C480 894 512 884 548 876" fill="none" stroke="#22d3ee" stroke-width="4"/>
+    <path class="draw" pathLength="1" style="--d:3.2s;--t:1.2s" d="M48 1084 C120 1078 180 1050 230 1020 C300 978 380 940 440 912 C480 892 512 874 548 864" fill="none" stroke="#22d3ee" stroke-width="4"/>
     <text class="fade" style="--d:3.4s" x="40" y="1140" fill="#e6edf7" font-family="'Space Grotesk', system-ui, sans-serif" font-size="40" font-weight="700" letter-spacing="3" data-en="PAST">GEÇMİŞ</text>
     <text class="fade" style="--d:3.6s" x="40" y="1176" fill="#9fb0c9" font-family="system-ui, sans-serif" font-size="24" data-en="actual · measured · on record">gerçekleşen · ölçülen · kayıt altında</text>
     <!-- future, at the top: possible paths scatter and miss; the controlled path flows, lit, into the target -->
@@ -758,15 +769,15 @@
     <!-- today's core and the mark -->
     <circle cx="300" cy="600" r="34" fill="url(#iglowg)" class="core"/>
     <circle cx="300" cy="600" r="10" fill="#ecfeff" class="core"/>
-    <g transform="translate(300 600) scale(2.4) translate(-60 -60)" fill="none" stroke-linecap="round">
+    <g transform="translate(300 600) scale(2.2) translate(-60 -60)" fill="none" stroke-linecap="round">
       <circle class="fade" style="--d:5.4s" cx="60" cy="60" r="48" stroke="#e6edf7" stroke-width=".8" stroke-opacity=".2"/>
       <path class="draw" pathLength="1" style="--d:5.3s;--t:1s" d="M50 16 A44 44 0 0 0 50 104" stroke="#e6edf7" stroke-width="9"/>
       <path class="draw" pathLength="1" style="--d:5.45s;--t:1s" d="M70 16 A44 44 0 0 1 70 104" stroke="url(#ifut)" stroke-width="9"/>
       <path class="draw" pathLength="1" style="--d:5.7s;--t:.7s" d="M52 36 A26 26 0 0 0 52 84" stroke="#e6edf7" stroke-width="2.5" stroke-opacity=".4"/>
       <path class="fade" style="--d:5.8s" d="M68 36 A26 26 0 0 1 68 84" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="3 5" stroke-opacity=".7"/>
     </g>
-    <text class="fade" style="--d:6.2s" x="300" y="806" text-anchor="middle" fill="#e6edf7" font-family="'Space Grotesk', system-ui, sans-serif" font-size="62" font-weight="700" letter-spacing="2">Janus</text>
-    <text class="fade" style="--d:6.5s" x="300" y="852" text-anchor="middle" fill="#a9bad3" font-family="system-ui, sans-serif" font-size="30" data-en="Measure the Past, Manage the Future">Geçmişi Ölç, Geleceği Yönet</text>
+    <text class="fade" style="--d:6.2s" x="300" y="772" text-anchor="middle" fill="#e6edf7" font-family="'Space Grotesk', system-ui, sans-serif" font-size="62" font-weight="700" letter-spacing="2">Janus</text>
+    <text class="fade" style="--d:6.5s" x="300" y="810" text-anchor="middle" fill="#a9bad3" font-family="system-ui, sans-serif" font-size="30" data-en="Measure the Past, Manage the Future">Geçmişi Ölç, Geleceği Yönet</text>
   </svg>
   <span class="skipnote" data-en="Click or scroll to skip">Geçmek için tıklayın veya kaydırın</span>
 </div>
@@ -920,6 +931,13 @@
         </ul>
       </div>
     </section>
+    <div class="seam" aria-hidden="true">
+      <svg viewBox="0 0 1200 160" preserveAspectRatio="none" focusable="false">
+        <path class="pv" d="M0 146C380 144 600 70 820 40S1100 18 1200 16" />
+        <path class="ac" d="M0 150C360 149 560 98 760 70S1040 50 1200 48" />
+        <path class="ev" d="M0 150C400 150 620 84 840 56S1110 34 1200 32" />
+      </svg>
+    </div>
 
     <section class="sec alt">
       <div class="wrap two">
@@ -979,6 +997,14 @@
         </div>
       </div>
     </section>
+    <!-- seam: AI → security: a variance opens and is brought back -->
+    <div class="seam" aria-hidden="true">
+      <svg viewBox="0 0 1200 160" preserveAspectRatio="none" focusable="false">
+        <path class="pv" d="M0 80C400 80 800 80 1200 80" />
+        <path class="ac" d="M0 80C300 80 450 136 600 136S900 80 1200 80" />
+        <path class="ev" d="M0 80C300 80 450 26 600 26S900 80 1200 80" />
+      </svg>
+    </div>
 
     <section class="sec sec-lay">
       <div class="wrap">
@@ -1000,6 +1026,14 @@
         </div>
       </div>
     </section>
+    <!-- seam: security → why: calm, parallel; a project under control -->
+    <div class="seam" aria-hidden="true">
+      <svg viewBox="0 0 1200 160" preserveAspectRatio="none" focusable="false">
+        <path class="pv" d="M0 52C300 32 600 72 900 52S1150 42 1200 44" />
+        <path class="ac" d="M0 88C300 68 600 108 900 88S1150 78 1200 80" />
+        <path class="ev" d="M0 70C300 50 600 90 900 70S1150 60 1200 62" />
+      </svg>
+    </div>
 
     <section class="sec why-sec">
       <div class="wrap">
@@ -1021,6 +1055,15 @@
         <p class="why-close reveal" data-en="When a project measures the past continuously and reads tomorrow from today, there is no room for uncertainty.">Geçmişi kesintisiz ölçen ve yarını bugünden okuyan bir projede, belirsizliklere yer kalmaz.</p>
       </div>
     </section>
+    <!-- seam: why → contact: the three curves meet in one point -->
+    <div class="seam" aria-hidden="true">
+      <svg viewBox="0 0 1200 160" preserveAspectRatio="none" focusable="false">
+        <path class="pv" d="M0 20C420 20 700 80 960 80" />
+        <path class="ac" d="M0 140C420 140 700 80 960 80" />
+        <path class="ev" d="M0 80C420 80 700 80 960 80" />
+        <path class="meet" d="M960 80h0" />
+      </svg>
+    </div>
 
     <section class="sec alt cta" id="iletisim">
       <div class="wrap demo">
@@ -1332,6 +1375,7 @@
     let queued = false;
     const wide = matchMedia('(min-width: 861px)');
     const stageEl = document.getElementById('stage');
+    const seams = [...document.querySelectorAll('.seam')];
     const paint = () => {
       queued = false;
       afterEl.style.setProperty('--par', wide.matches ? `${(scrollY * 0.3) % 160}px` : '0px');
@@ -1340,6 +1384,7 @@
       stageEl.style.setProperty('--hs', (1 - 0.05 * p).toFixed(4));
       stageEl.style.setProperty('--ho', (0.7 * p).toFixed(3));
       afterEl.style.setProperty('--hand', Math.min(1, Math.max(0, (p - 0.15) / 0.7)).toFixed(3));
+      seams.forEach(sm => { const t = sm.getBoundingClientRect().top; sm.style.setProperty('--sp', Math.min(1, Math.max(0, (innerHeight - t) / (innerHeight * 0.6))).toFixed(3)); });
     };
     paint();
     addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(paint); } }, { passive: true });
