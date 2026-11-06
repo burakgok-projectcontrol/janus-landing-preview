@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Janus metro sahnesi</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #07111F; color: #e6edf7; font: 14px/1.4 system-ui, sans-serif; overflow: hidden; }
+  canvas { display: block; }
+  .bar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(720px, calc(100% - 32px)); background: rgba(19, 31, 54, .88); border: 1px solid #22304d; border-radius: 14px; padding: 12px 16px; display: grid; grid-template-columns: auto 1fr auto; gap: 8px 14px; align-items: center; backdrop-filter: blur(8px); z-index: 2; }
+  .bar button { background: #111C2B; color: inherit; border: 1px solid #22304d; border-radius: 8px; padding: 8px 12px; cursor: pointer; font: inherit; }
+  .bar .phase { grid-column: 1 / -1; color: #9fb0c9; font-size: 13px; }
+  .bar .phase b { color: #e6edf7; font-weight: 600; }
+  .pct { font-variant-numeric: tabular-nums; min-width: 4ch; text-align: right; font-weight: 600; }
+  input[type=range] { width: 100%; accent-color: #35C7E8; }
+  .labels-layer { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
+  .note { position: fixed; top: 14px; right: 16px; font-size: 12px; color: #9fb0c9; z-index: 2; opacity: 0; transition: opacity .4s; }
+  .embed .bar { display: none; }
+  .embed .note { top: auto; bottom: 14px; }
+  @media (max-width: 700px) { .embed .note { top: 58px; bottom: auto; right: 14px; } }
+  /* Ring counter: an indicator card standing over the machine, with a marker line down to it. */
+  .evm-label.ring { min-width: 0; }
+  .evm-label.ring b { font-variant-numeric: tabular-nums; }
+  .evm-label.mg { color: #86efac; }
+  .evm-label.hr { color: #fcd34d; font-weight: 700; }
+  @media (max-width: 600px) { .evm-label.mg { display: none; } }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div class="note" id="note">Örnek senaryo · temsilî değerler</div>
+<div class="bar">
+  <button id="play" aria-pressed="true" aria-label="Oynat / duraklat">❚❚</button>
+  <input id="prog" type="range" min="0" max="1000" value="0" aria-label="Yapım ilerlemesi">
+  <span class="pct" id="pct">0%</span>
+  <div class="phase" id="phase"></div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { chartStyles, chartPanel, stripStyles } from './evm.js';
+import { createBackdrop, createSheet } from './sheet.js';
+import { t, num, pct, EN, LANG } from './i18n.js';
+document.documentElement.lang = LANG; // uppercase labels follow the language's rules (TR "HALKA", EN "RING", not "RİNG")
+import { warmUp, pause } from './warmup.js';
+chartStyles();
+document.getElementById('note').textContent = t('Örnek senaryo · temsilî değerler', 'Sample scenario · illustrative values');
+
+// ?embed: driven by the landing page (no own controls, progress set from outside); ?lite: lighter rendering for phones.
+const QS = new URLSearchParams(location.search);
+const EMBED = QS.has('embed'), LITE = QS.has('lite');
+if (EMBED) document.body.classList.add('embed');
+
+// World in metres, drawn as a long section: the cut face is the plane z = 0 through the tunnel axis, so the back half
+// of the tunnel (rings, machine) shows through it. x runs along the tunnel from the launch shaft (x < 0) to the
+// arrival station (x > L). The length is compressed (the drawing says ~1,8 km); the depth is to scale.
+const L = 120;                 // tunnel length from the shaft wall to the station head wall
+const AXIS = -12;              // tunnel axis depth
+const R_IN = 2.85, R_OUT = 3.15, R_BORE = 3.3;
+const RINGS = 1200, RING_M = 1.5;   // sample scenario: 1.200 rings of 1,5 m ≈ 1,8 km
+const RW = LITE ? 1.5 : 0.75;       // width of one drawn ring (each stands for several real ones)
+const NR = Math.ceil(L / RW);
+const SHAFT = { x0: -9, x1: 0, z0: -5, y0: -17 };
+const STATION = { x0: L, x1: L + 26, y0: -15.6, y1: -4, z0: -12 };
+const FX0 = -34, FX1 = L + 52, FY0 = -28; // extent of the cut face
+const HARD = [0.23, 0.33];          // hard rock band, as a share of the tunnel length
+const SHIELD = 7.5;                 // shield length (cutterhead front to tail)
+
+const smooth = v => v * v * (3 - 2 * v);
+const clamp01 = v => Math.min(1, Math.max(0, v));
+const ramp = (c, a, b) => smooth(clamp01((c - a) / (b - a)));
+const int = v => Math.round(v).toLocaleString(EN ? 'en-US' : 'tr-TR');
+
+// ------------------------------------------------------------------ renderer, camera, light
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, LITE ? 1.25 : 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+document.body.appendChild(renderer.domElement);
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.domElement.className = 'labels-layer';
+document.body.appendChild(labelRenderer.domElement);
+
+const scene = new THREE.Scene();
+const backdrop = createBackdrop('metro');
+scene.background = backdrop.texture;
+scene.fog = new THREE.Fog('#07111F', 160, 360);
+const camera = new THREE.PerspectiveCamera(32, 1, 1, 1500);
+camera.position.set(14, 8, 62);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(-2, -6, -2);
+controls.enableDamping = true;
+
+const hemi = new THREE.HemisphereLight('#dbe7ff', '#1a2440', 1.1);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight('#ffffff', 2.3);
+sun.castShadow = true;
+sun.shadow.mapSize.setScalar(LITE ? 1024 : 4096);
+sun.shadow.bias = -0.0004;
+sun.shadow.normalBias = 0.05;
+Object.assign(sun.shadow.camera, { left: -55, right: 55, top: 40, bottom: -40, near: 1, far: 260 });
+scene.add(sun, sun.target);
+const SUN_OFF = new THREE.Vector3(45, 60, 90);
+
+// Cinematic look on wide screens (phones keep the light set-up above): a low, warm raking light, a cool fill, depth
+// haze, a slow camera drift and a soft glow on the brightest parts (same recipe as the other scenes).
+const CINE = !LITE;
+const HAZE = '#14315c';
+if (CINE) {
+  sun.color.set('#ffe8cc');
+  renderer.toneMappingExposure = 1.3;
+  sun.intensity = 3.2;
+  SUN_OFF.set(70, 45, 75);
+  hemi.color.set('#9cc2ff');
+  hemi.groundColor.set('#0a1830');
+  scene.fog.color.set(HAZE);
+  scene.fog.near = 130;
+  scene.fog.far = 340;
+} else scene.fog.color.set(HAZE);
+let post = null;
+if (CINE && !QS.has('nopost')) {
+  const [{ EffectComposer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }] = await Promise.all([
+    import('three/addons/postprocessing/EffectComposer.js'), import('three/addons/postprocessing/RenderPass.js'),
+    import('three/addons/postprocessing/UnrealBloomPass.js'), import('three/addons/postprocessing/OutputPass.js'),
+  ]);
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.78));
+  composer.addPass(new OutputPass());
+  post = { composer, target: composer.readBuffer, render: () => composer.render(), setSize: (w, h) => { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); } };
+}
+
+// ------------------------------------------------------------------ blueprint materials
+const bp = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 1, ...extra });
+const glow = (color, k = 1) => bp(color, { emissive: color, emissiveIntensity: k });
+const EDGE = new THREE.LineBasicMaterial({ color: '#cfe8ff', transparent: true, opacity: 0.7 });
+const M = {
+  ground: bp('#123468'),
+  street: bp('#0e2c5e'),
+  walk: bp('#16407f'),
+  city: bp('#16407f', { transparent: true, opacity: 0.85 }),
+  cavity: bp('#0a2250', { side: THREE.BackSide }),
+  bore: bp('#0b2452', { side: THREE.DoubleSide }),
+  ring: bp('#1f539e'),
+  concrete: bp('#1c4d96'),
+  machine: bp('#1a4589', { side: THREE.DoubleSide }),
+  steel: bp('#2b62b5'),
+  dark: bp('#10306a'),
+  cutter: bp('#3a74c8'),
+  muck: bp('#3b5f99'),
+  car: bp('#2a5aa8'),
+  cyan: glow('#35C7E8', 1),
+  lamp: glow('#bfe9ff', 0.6),
+  bit: glow('#35C7E8', 0.9),
+  flash: glow('#35C7E8', 1.4),
+  worker: bp('#5eead4', { emissive: '#35C7E8', emissiveIntensity: 0.7 }),
+};
+M.flash.transparent = true;
+const geo = {
+  box: (w, h, d) => new THREE.BoxGeometry(w, h, d),
+  cylX: (r, l, n = 24) => new THREE.CylinderGeometry(r, r, l, n).rotateZ(Math.PI / 2),
+  cylZ: (r, l, n = 16) => new THREE.CylinderGeometry(r, r, l, n).rotateX(Math.PI / 2),
+  cylY: (r, l, n = 16) => new THREE.CylinderGeometry(r, r, l, n),
+};
+function mesh(g, mat, parent = scene, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(g, typeof mat === 'string' ? M[mat] : mat);
+  m.position.set(x, y, z);
+  m.castShadow = m.receiveShadow = true;
+  parent.add(m);
+  return m;
+}
+const group = (parent = scene, x = 0, y = 0, z = 0) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
+
+await pause(); // start-up in slices (see warmup.js)
+// ------------------------------------------------------------------ cut face: soil layers drawn on a canvas
+// Ground layers (fill, clay, sandstone with a hard rock band), the planned tunnel outline, chainage and a dimension
+// line. Shaft and station are holes in the drawing; the bored part of the tunnel is cut out in the shader.
+const yClay = x => -2.5 + 0.3 * Math.sin(x * 0.08);
+const ySand = x => -8 + 0.8 * Math.sin(x * 0.045 + 1);
+const HX0 = HARD[0] * L, HX1 = HARD[1] * L;
+function drawFace() {
+  const S = LITE ? 12 : 19;
+  const c = document.createElement('canvas');
+  c.width = Math.round((FX1 - FX0) * S);
+  c.height = Math.round(-FY0 * S);
+  // CPU-backed canvas, layer textures as small repeating tiles: drawn once, so this is far cheaper than thousands of
+  // clipped strokes on an accelerated canvas (that took seconds with software GPU).
+  const g = c.getContext('2d', { willReadFrequently: true });
+  const X = x => (x - FX0) * S, Y = y => -y * S;
+  const INK = a => `rgba(170, 214, 255, ${a})`;
+  const tile = (w, h, draw) => {
+    const tc = document.createElement('canvas');
+    tc.width = Math.max(2, Math.round(w)); tc.height = Math.max(2, Math.round(h));
+    const tg = tc.getContext('2d');
+    tg.lineWidth = Math.max(1, S / 16);
+    draw(tg, tc.width, tc.height);
+    return g.createPattern(tc, 'repeat');
+  };
+  const layer = (top, bottom, fill, pat) => {
+    const p = new Path2D();
+    p.moveTo(X(FX0), Y(top(FX0)));
+    for (let x = FX0; x <= FX1; x += 2) p.lineTo(X(x), Y(top(x)));
+    for (let x = FX1; x >= FX0; x -= 2) p.lineTo(X(x), Y(bottom(x)));
+    p.closePath();
+    g.fillStyle = fill;
+    g.fill(p);
+    g.fillStyle = pat;
+    g.fill(p);
+    return p;
+  };
+  const diag = (a, step, cross) => tile(step, step, (tg, w, h) => {
+    tg.strokeStyle = INK(a);
+    tg.beginPath();
+    for (const o of [-w, 0, w]) { tg.moveTo(o, h); tg.lineTo(o + w, 0); if (cross) { tg.moveTo(o, 0); tg.lineTo(o + w, h); } }
+    tg.stroke();
+  });
+  layer(() => 0, yClay, '#163a74', diag(0.18, S * 0.9));
+  layer(yClay, ySand, '#11306a', tile(S * 2.2, S * 1.4, (tg, w, h) => {
+    tg.strokeStyle = INK(0.2);
+    tg.beginPath(); tg.moveTo(0, h * 0.25); tg.lineTo(S, h * 0.25); tg.moveTo(S * 1.1, h * 0.75); tg.lineTo(S * 2.1, h * 0.75); tg.stroke();
+  }));
+  layer(ySand, () => FY0, '#0c2858', tile(S * 1.6, S * 1.6, (tg, w, h) => {
+    tg.fillStyle = INK(0.22);
+    const d = Math.max(1.5, S * 0.12);
+    tg.fillRect(w * 0.2, h * 0.25, d, d); tg.fillRect(w * 0.7, h * 0.75, d, d);
+  }));
+  // Hard rock band, a lens across the tunnel.
+  const mid = (HX0 + HX1) / 2;
+  const hard = new Path2D();
+  hard.moveTo(X(HX0 - 3), Y(-20));
+  hard.bezierCurveTo(X(HX0 - 2), Y(-11), X(HX0), Y(-7.2), X(mid - 2), Y(-6.6));
+  hard.bezierCurveTo(X(mid + 4), Y(-6.2), X(HX1), Y(-7.6), X(HX1 + 2), Y(-12));
+  hard.bezierCurveTo(X(HX1 + 3), Y(-17), X(HX1), Y(-21.5), X(mid), Y(-21.8));
+  hard.bezierCurveTo(X(HX0 + 2), Y(-22), X(HX0 - 3), Y(-21), X(HX0 - 3), Y(-20));
+  g.fillStyle = '#1d4486';
+  g.fill(hard);
+  g.fillStyle = diag(0.32, S * 0.55, true);
+  g.fill(hard);
+  g.strokeStyle = INK(0.75); g.lineWidth = Math.max(1.5, S / 9); g.stroke(hard);
+  // Layer boundaries.
+  g.strokeStyle = INK(0.55); g.lineWidth = Math.max(1, S / 12);
+  for (const f of [yClay, ySand]) { g.beginPath(); for (let x = FX0; x <= FX1; x += 2) g.lineTo(X(x), Y(f(x))); g.stroke(); }
+  // Planned tunnel outline and axis (dashed).
+  g.setLineDash([S * 0.8, S * 0.5]);
+  g.strokeStyle = INK(0.6);
+  g.beginPath();
+  for (const y of [AXIS + R_BORE, AXIS - R_BORE]) { g.moveTo(X(0), Y(y)); g.lineTo(X(L), Y(y)); }
+  g.stroke();
+  g.setLineDash([S * 2, S * 0.4, S * 0.3, S * 0.4]);
+  g.strokeStyle = INK(0.35);
+  g.beginPath(); g.moveTo(X(FX0 + 2), Y(AXIS)); g.lineTo(X(FX1 - 2), Y(AXIS)); g.stroke();
+  g.setLineDash([]);
+  // Labels.
+  const text = (s, x, y, size = 0.75, a = 0.85, align = 'left') => {
+    g.font = `700 ${Math.round(size * S)}px system-ui, sans-serif`;
+    g.fillStyle = INK(a); g.textAlign = align; g.fillText(s, X(x), Y(y));
+  };
+  text(t('DOLGU', 'FILL'), FX0 + 2, -1.6, 0.7, 0.75);
+  text(t('KİL', 'CLAY'), FX0 + 2, -5.6, 0.7, 0.75);
+  text(t('KUMTAŞI', 'SANDSTONE'), FX0 + 2, -14, 0.7, 0.75);
+  text(t('SERT KAYA', 'HARD ROCK'), mid, -18.6, 0.8, 0.95, 'center');
+  text(t('GİRİŞ ŞAFTI', 'LAUNCH SHAFT'), (SHAFT.x0 + SHAFT.x1) / 2, SHAFT.y0 - 1.3, 0.6, 0.8, 'center');
+  text(t('VARIŞ İSTASYONU', 'ARRIVAL STATION'), (STATION.x0 + STATION.x1) / 2, STATION.y0 - 1.4, 0.65, 0.8, 'center');
+  text(t('TÜNEL EKSENİ', 'TUNNEL AXIS'), L + 32, AXIS + 0.4, 0.55, 0.6);
+  // Chainage and the overall dimension.
+  const dy = -24.5;
+  g.strokeStyle = INK(0.65); g.lineWidth = Math.max(1, S / 12);
+  g.beginPath();
+  g.moveTo(X(0), Y(dy)); g.lineTo(X(L), Y(dy));
+  for (let k = 0; k <= 4; k++) { const x = (L * k) / 4; g.moveTo(X(x), Y(dy + 0.6)); g.lineTo(X(x), Y(dy - 0.6)); }
+  for (const x of [0, L]) { g.moveTo(X(x) - S * 0.4, Y(dy - 0.4)); g.lineTo(X(x) + S * 0.4, Y(dy + 0.4)); }
+  g.stroke();
+  g.font = `600 ${Math.round(0.55 * S)}px ui-monospace, Consolas, monospace`;
+  g.fillStyle = INK(0.75); g.textAlign = 'center';
+  for (let k = 0; k <= 4; k++) { const m = (1800 * k) / 4; g.fillText(`Km ${Math.floor(m / 1000)}+${String(m % 1000).padStart(3, '0')}`, X((L * k) / 4), Y(dy - 1.4)); }
+  text(`≈ ${num(1.8, 1)} km · ${int(RINGS)} ${t('halka', 'rings')}`, L / 2 + L / 8, dy + 0.5, 0.65, 0.85, 'center');
+  // Holes: shaft and station.
+  g.clearRect(X(SHAFT.x0), Y(0) - 1, (SHAFT.x1 - SHAFT.x0) * S, -SHAFT.y0 * S + 1);
+  g.clearRect(X(STATION.x0), Y(STATION.y1), (STATION.x1 - STATION.x0) * S, (STATION.y1 - STATION.y0) * S);
+  // Edge of the cut.
+  g.strokeStyle = INK(0.8); g.lineWidth = Math.max(1.5, S / 8);
+  g.strokeRect(X(SHAFT.x0), Y(0), (SHAFT.x1 - SHAFT.x0) * S, -SHAFT.y0 * S);
+  g.strokeRect(X(STATION.x0), Y(STATION.y1), (STATION.x1 - STATION.x0) * S, (STATION.y1 - STATION.y0) * S);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+const cut = { value: 0 }; // the face is open along the tunnel up to this x (the cutterhead)
+const faceMat = new THREE.MeshStandardMaterial({ map: drawFace(), roughness: 1, alphaTest: 0.5 });
+faceMat.onBeforeCompile = sh => {
+  sh.uniforms.uCut = cut;
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vW;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vW;\nuniform float uCut;')
+    .replace('void main() {', `void main() {\n if (vW.x > -0.01 && vW.x < uCut && abs(vW.y - (${AXIS.toFixed(2)})) < ${R_BORE.toFixed(2)}) discard;`);
+};
+const face = mesh(new THREE.PlaneGeometry(FX1 - FX0, -FY0), faceMat, scene, (FX0 + FX1) / 2, FY0 / 2, 0);
+face.castShadow = false;
+face.userData.noEdges = true;
+// Block ends and the ground surface (with the shaft opening).
+const DEPTH = 30;
+mesh(geo.box(0.4, -FY0, DEPTH), 'ground', scene, FX0 + 0.2, FY0 / 2, -DEPTH / 2);
+mesh(geo.box(0.4, -FY0, DEPTH), 'ground', scene, FX1 - 0.2, FY0 / 2, -DEPTH / 2);
+const slab = (x0, x1, z0, z1, mat = 'ground', h = 0.4) => mesh(geo.box(x1 - x0, h, z1 - z0), mat, scene, (x0 + x1) / 2, -h / 2, (z0 + z1) / 2);
+slab(FX0, SHAFT.x0, -DEPTH, 0);
+slab(SHAFT.x1, FX1, -DEPTH, 0);
+slab(SHAFT.x0, SHAFT.x1, -DEPTH, SHAFT.z0);
+
+await pause();
+// ------------------------------------------------------------------ street, buildings, traffic
+const ST = { z0: -13, z1: -5 };
+mesh(geo.box(FX1 - FX0, 0.08, ST.z1 - ST.z0), 'street', scene, (FX0 + FX1) / 2, 0.04, (ST.z0 + ST.z1) / 2).userData.noEdges = true;
+for (const z of [ST.z0 - 1, ST.z1 + 1]) mesh(geo.box(FX1 - FX0, 0.18, 2), 'walk', scene, (FX0 + FX1) / 2, 0.09, z).userData.noEdges = true;
+{
+  const pts = [];
+  for (let x = FX0 + 2; x < FX1 - 4; x += 6) pts.push(new THREE.Vector3(x, 0.1, (ST.z0 + ST.z1) / 2), new THREE.Vector3(x + 3, 0.1, (ST.z0 + ST.z1) / 2));
+  scene.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), EDGE));
+}
+const rnd = (i => () => ((i = (i * 9301 + 49297) % 233280) / 233280))(11);
+for (let x = FX0 + 6; x < FX1 - 4; x += 10 + rnd() * 3) {
+  const w = 7 + rnd() * 2, d = 7 + rnd() * 5, h = 3.5 + rnd() * 8;
+  mesh(geo.box(w, h, d), 'city', scene, x, h / 2, -16 - d / 2 - rnd() * 2);
+}
+// Station entrance on the street side.
+mesh(geo.box(7, 3, 3), 'concrete', scene, STATION.x0 + 10, 1.5, -2.2);
+mesh(geo.box(7.6, 0.3, 3.6), 'steel', scene, STATION.x0 + 10, 3.15, -2.2);
+mesh(geo.box(1.4, 1.4, 0.2), 'cyan', scene, STATION.x0 + 6.2, 4.4, -0.6).castShadow = false;
+mesh(geo.cylY(0.08, 1.2), 'steel', scene, STATION.x0 + 6.2, 3.4, -0.6);
+// Cars on two lanes.
+const cars = [];
+const NCAR = LITE ? 4 : 7;
+for (let lane = 0; lane < 2; lane++) for (let k = 0; k < NCAR; k++) {
+  const c = group(scene, 0, 0, lane ? ST.z0 + 2 : ST.z1 - 2);
+  mesh(geo.box(4, 1, 1.8), 'car', c, 0, 0.75, 0);
+  mesh(geo.box(2, 0.7, 1.6), 'dark', c, -0.2, 1.6, 0);
+  c.userData = { lane, off: (k / NCAR) * (FX1 - FX0) + rnd() * 8, v: 7 + rnd() * 3 };
+  if (lane) c.rotation.y = Math.PI;
+  cars.push(c);
+}
+
+await pause();
+// ------------------------------------------------------------------ launch shaft, site, gantry crane
+const shaftBox = mesh(geo.box(SHAFT.x1 - SHAFT.x0, -SHAFT.y0 + 0.2, -SHAFT.z0), 'cavity', scene, (SHAFT.x0 + SHAFT.x1) / 2, SHAFT.y0 / 2 + 0.1, SHAFT.z0 / 2);
+shaftBox.castShadow = false;
+mesh(geo.box(9, 0.5, 5), 'concrete', scene, (SHAFT.x0 + SHAFT.x1) / 2, SHAFT.y0 + 0.25, -2.5); // shaft floor
+mesh(geo.box(8, 0.6, 2.8), 'steel', scene, -4.2, AXIS - 3.0, 0); // launch cradle
+// Gantry crane over the shaft: portal frame, trolley, hoist.
+const gantry = group(scene);
+const GY = 10;
+for (const x of [SHAFT.x0 - 2.5, SHAFT.x1 + 2.5]) for (const z of [SHAFT.z0 - 1, 1.8]) mesh(geo.box(0.6, GY, 0.6), 'steel', gantry, x, GY / 2, z);
+for (const z of [SHAFT.z0 - 1, 1.8]) mesh(geo.box(SHAFT.x1 - SHAFT.x0 + 6, 0.9, 0.7), 'steel', gantry, (SHAFT.x0 + SHAFT.x1) / 2, GY, z);
+const trolley = mesh(geo.box(1.6, 0.9, SHAFT.z0 * -1 + 4), 'dark', gantry, -4, GY + 0.7, (SHAFT.z0 - 1 + 1.8) / 2);
+const cable = mesh(geo.cylY(0.05, 1, 6), 'steel', gantry, -4, 0, 0);
+cable.castShadow = false;
+const hook = mesh(geo.box(0.7, 0.6, 0.7), 'cutter', gantry, -4, 0, 0);
+// A ring segment travelling down the shaft while the machine bores.
+const segGeo = new THREE.CylinderGeometry(R_OUT, R_OUT, 1.2, 12, 1, true, -0.5, 1).rotateZ(Math.PI / 2);
+const segLoad = mesh(segGeo, 'concrete', gantry, -4, 0, 0);
+segLoad.material = M.ring;
+// Segment stock and the spoil heap on the site.
+for (let k = 0; k < 6; k++) mesh(new THREE.CylinderGeometry(1.6, 1.6, 1.1, 10, 1, false, -0.6, 1.2).rotateX(Math.PI / 2), 'ring', scene, -17 + (k % 3) * 1.8, 0.2 + Math.floor(k / 3) * 0.45, -3).rotation.z = Math.PI / 2;
+const heap = mesh(new THREE.ConeGeometry(1, 1, 20), 'muck', scene, -26, 0, -6);
+heap.userData.noEdges = true;
+// Site hoarding along the street side of the site.
+mesh(geo.box(30, 1.8, 0.15), 'walk', scene, -19, 0.9, ST.z1 + 2.2);
+
+await pause();
+// ------------------------------------------------------------------ tunnel: bore, rings, lights, rails
+const boreGeo = new THREE.CylinderGeometry(R_BORE, R_BORE, L, 40, 1, true, Math.PI / 2, Math.PI).rotateZ(-Math.PI / 2);
+const bore = mesh(boreGeo, 'bore', scene, L / 2, AXIS, 0);
+bore.castShadow = false;
+bore.userData.noEdges = true;
+// One drawn ring: the back half of the lining, a half annulus extruded along x.
+const ringShape = new THREE.Shape();
+ringShape.absarc(0, 0, R_OUT, -Math.PI / 2, Math.PI / 2, false);
+ringShape.absarc(0, 0, R_IN, Math.PI / 2, -Math.PI / 2, true);
+const ringGeo = new THREE.ExtrudeGeometry(ringShape, { depth: RW * 0.97, bevelEnabled: false, curveSegments: 18 }).rotateY(Math.PI / 2);
+const rings = new THREE.InstancedMesh(ringGeo, M.ring, NR);
+rings.castShadow = rings.receiveShadow = true;
+rings.userData.noEdges = true;
+{
+  const m4 = new THREE.Matrix4();
+  for (let i = 0; i < NR; i++) rings.setMatrixAt(i, m4.makeTranslation(i * RW, AXIS, 0));
+}
+rings.count = 0;
+scene.add(rings);
+// The ring joints: one line geometry for all rings, drawn up to the rings placed so far.
+const ringEdge = new THREE.EdgesGeometry(ringGeo, 30);
+const ePos = ringEdge.attributes.position.array, perRing = ePos.length / 3;
+const allEdges = new Float32Array(ePos.length * NR);
+for (let i = 0; i < NR; i++) for (let k = 0; k < ePos.length; k += 3) {
+  allEdges[i * ePos.length + k] = ePos[k] + i * RW;
+  allEdges[i * ePos.length + k + 1] = ePos[k + 1] + AXIS;
+  allEdges[i * ePos.length + k + 2] = ePos[k + 2];
+}
+const ringLines = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(allEdges, 3)), new THREE.LineBasicMaterial({ color: '#cfe8ff', transparent: true, opacity: 0.32 }));
+ringLines.frustumCulled = false;
+scene.add(ringLines);
+// The newest ring lights up as it is set.
+const flash = mesh(ringGeo, 'flash', scene);
+flash.castShadow = false;
+flash.scale.set(1, 1.02, 1.02);
+flash.userData.noEdges = true;
+// Tunnel lights on the back wall and the rails in the invert, growing with the tunnel.
+const NL = Math.floor(L / 6);
+const lamps = new THREE.InstancedMesh(geo.box(0.9, 0.25, 0.25), M.lamp, NL);
+{ const m4 = new THREE.Matrix4(); for (let i = 0; i < NL; i++) lamps.setMatrixAt(i, m4.makeTranslation(3 + i * 6, AXIS + 1.3, -2.25)); }
+lamps.count = 0;
+lamps.userData.noEdges = true;
+scene.add(lamps);
+const rails = group(scene, SHAFT.x0 + 0.5, AXIS - 2.6, 0);
+for (const z of [-0.75, 0.75]) mesh(geo.box(1, 0.2, 0.15).translate(0.5, 0, 0), 'cutter', rails, 0, 0, z).userData.noEdges = true;
+// Conveyor belt for the spoil: along the tunnel wall, up the shaft, over to the heap.
+const BELT = { y: AXIS + 1.9, z: -1.8 };
+const beltT = mesh(geo.box(1, 0.15, 0.7).translate(0.5, 0, 0), 'dark', scene, 0, BELT.y, BELT.z);
+const beltV = mesh(geo.box(0.7, -BELT.y + 2.2, 0.7), 'dark', scene, SHAFT.x0 + 1.5, (BELT.y + 2.2) / 2, BELT.z);
+const beltTop = { a: new THREE.Vector3(SHAFT.x0 + 1.5, 2.2, BELT.z), b: new THREE.Vector3(-23.5, 3.6, -4.5) };
+{
+  const d = beltTop.b.clone().sub(beltTop.a);
+  const b = mesh(geo.box(d.length(), 0.15, 0.7), 'dark', scene);
+  b.position.copy(beltTop.a).addScaledVector(d, 0.5);
+  b.rotation.y = -Math.atan2(d.z, d.x);
+  b.rotation.z = Math.atan2(d.y, Math.hypot(d.x, d.z));
+  for (const k of [0.3, 0.7]) { const p = beltTop.a.clone().addScaledVector(d, k); mesh(geo.box(0.25, p.y, 0.25), 'steel', scene, p.x, p.y / 2, p.z); }
+}
+const NMUCK = LITE ? 70 : 150, MUCK_GAP = 1.1 * (LITE ? 2 : 1);
+const muck = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.28, 0), M.muck, NMUCK);
+muck.userData.noEdges = true;
+muck.castShadow = false;
+muck.count = 0;
+scene.add(muck);
+
+await pause();
+// ------------------------------------------------------------------ TBM: cutterhead, shield, rams, erector, back-up
+// Built from primitives, front at local x = 0, axis along x.
+const tbm = group(scene, 0, AXIS, 0);
+const cutterhead = group(tbm, -0.25, 0, 0);
+mesh(geo.cylX(3.05, 0.45, 40), 'dark', cutterhead);
+mesh(new THREE.TorusGeometry(3.0, 0.14, 8, 40).rotateY(Math.PI / 2), 'cutter', cutterhead, 0.24, 0, 0);
+mesh(new THREE.ConeGeometry(0.55, 0.7, 16).rotateZ(-Math.PI / 2), 'cutter', cutterhead, 0.55, 0, 0);
+const bits = [];
+for (let s = 0; s < 6; s++) {
+  const a = (s / 6) * Math.PI * 2;
+  const spoke = mesh(geo.box(0.3, 2.7, 0.55), 'steel', cutterhead, 0.32, 0, 0);
+  spoke.rotation.x = a;
+  spoke.position.set(0.32, Math.cos(a) * 1.55, Math.sin(a) * 1.55);
+  for (let k = 0; k < 4; k++) {
+    const r = 0.8 + k * 0.6;
+    const b = mesh(geo.cylZ(0.17, 0.12, 12), 'bit', cutterhead, 0.52, Math.cos(a) * r, Math.sin(a) * r);
+    b.rotation.x = a;
+    b.castShadow = false;
+    bits.push(b);
+  }
+  // Muck openings between the spokes.
+  const o = mesh(geo.box(0.1, 1.2, 0.35), 'cavity', cutterhead, 0.26, Math.cos(a + 0.52) * 2.2, Math.sin(a + 0.52) * 2.2);
+  o.material = M.dark;
+  o.rotation.x = a + 0.52;
+}
+mesh(geo.cylX(3.15, SHIELD - 0.7, 48), 'steel', tbm, -0.7 - (SHIELD - 0.7) / 2, 0, 0);
+mesh(geo.cylX(3.2, 0.35, 48), 'machine', tbm, -0.75, 0, 0);
+for (const x of [-1.6, -6.6]) mesh(geo.cylX(3.19, 0.14, 48), 'cyan', tbm, x, 0, 0).castShadow = false;
+// Thrust rams pushing off the last ring, and the erector that sets the segments.
+for (let k = 0; k < 10; k++) {
+  const a = (k / 10) * Math.PI * 2;
+  mesh(geo.cylX(0.12, 1.2, 8), 'cutter', tbm, -SHIELD - 0.5, Math.cos(a) * 2.55, Math.sin(a) * 2.55);
+}
+const erector = group(tbm, -SHIELD - 0.9, 0, 0);
+mesh(new THREE.TorusGeometry(2.1, 0.13, 8, 32).rotateY(Math.PI / 2), 'steel', erector);
+mesh(geo.box(0.4, 2.2, 0.5), 'machine', erector, 0, -1.1, 0);
+mesh(geo.box(0.6, 0.35, 1.3), 'cutter', erector, 0, -2.25, 0);
+// Hard rock warning: the cutterhead rim glows amber while it cuts through the band.
+const warnMat = bp('#3a74c8', { emissive: '#fbbf24', emissiveIntensity: 0 });
+const rim = cutterhead.children[1];
+rim.material = warnMat;
+// Back-up trailers (gantries) carrying the power, the hydraulics and the conveyor.
+const TRAILER = 6.5, GAP = 0.5;
+const trailers = [];
+for (let k = 0; k < 3; k++) {
+  const tr = group(scene, 0, AXIS, 0);
+  for (const x of [-2.9, 2.9]) for (const z of [-1.55, 1.55]) mesh(geo.box(0.25, 3.3, 0.25), 'steel', tr, x, -0.95, z);
+  mesh(geo.box(TRAILER, 0.22, 3.4), 'machine', tr, 0, 0.75, 0);
+  mesh(geo.box(TRAILER, 0.18, 3.0), 'machine', tr, 0, -1.6, 0);
+  for (const x of [-2.6, 2.6]) for (const z of [-0.75, 0.75]) mesh(geo.cylZ(0.28, 0.2, 12), 'dark', tr, x, -2.35, z);
+  if (k === 0) { mesh(geo.box(1.6, 1.2, 1.2), 'dark', tr, -1.6, 1.46, 0.5); mesh(geo.box(1.2, 1.0, 1.0), 'steel', tr, 1.2, 1.36, 0.6); }
+  if (k === 1) { mesh(geo.cylX(0.55, 3.2, 16), 'cutter', tr, 0, 1.42, 0.7); mesh(geo.box(1.0, 0.8, 0.8), 'dark', tr, -2.3, -1.1, 0.6); }
+  if (k === 2) { mesh(geo.box(2.2, 1.3, 1.3), 'dark', tr, 0.6, 1.5, 0.5); mesh(geo.cylZ(0.6, 0.6, 18), 'steel', tr, -2.2, 1.45, 0.6); }
+  mesh(geo.box(0.6, 0.18, 0.18), 'lamp', tr, 0, 2.05, 1.0).castShadow = false;
+  trailers.push(tr);
+}
+
+await pause();
+// ------------------------------------------------------------------ arrival station
+const stBox = mesh(geo.box(STATION.x1 - STATION.x0, STATION.y1 - STATION.y0, -STATION.z0), 'cavity', scene, (STATION.x0 + STATION.x1) / 2, (STATION.y0 + STATION.y1) / 2, STATION.z0 / 2);
+stBox.castShadow = false;
+const headwall = mesh(geo.box(0.6, STATION.y1 - STATION.y0, -STATION.z0), 'concrete', scene, L - 0.3, (STATION.y0 + STATION.y1) / 2, STATION.z0 / 2);
+headwall.userData.noEdges = true;
+const PLAT = { y: AXIS - 1.9, z0: STATION.z0, z1: -3.2 };
+mesh(geo.box(STATION.x1 - STATION.x0 - 2, PLAT.y - STATION.y0, PLAT.z1 - PLAT.z0), 'concrete', scene, (STATION.x0 + STATION.x1) / 2, (PLAT.y + STATION.y0) / 2, (PLAT.z0 + PLAT.z1) / 2);
+mesh(geo.box(STATION.x1 - STATION.x0 - 2, 0.06, 0.4), 'cyan', scene, (STATION.x0 + STATION.x1) / 2, PLAT.y + 0.03, PLAT.z1 - 0.3).castShadow = false;
+for (let x = STATION.x0 + 4; x < STATION.x1 - 2; x += 6) mesh(geo.box(0.7, STATION.y1 - PLAT.y, 0.7), 'concrete', scene, x, (STATION.y1 + PLAT.y) / 2, -8);
+const stLights = [];
+for (let x = STATION.x0 + 3; x < STATION.x1 - 2; x += 4) { const l = mesh(geo.box(2.4, 0.15, 0.4), glow('#bfe9ff', 0.08), scene, x, STATION.y1 - 0.4, -6); l.castShadow = false; stLights.push(l); }
+// The head wall after the breakthrough: the same wall with a ragged opening where the machine came through.
+const brokenWall = (() => {
+  const sh = new THREE.Shape(), D = -STATION.z0;
+  sh.moveTo(0, STATION.y1); sh.lineTo(D, STATION.y1); sh.lineTo(D, STATION.y0); sh.lineTo(0, STATION.y0); sh.lineTo(0, AXIS - R_BORE - 0.2);
+  const jag = (i => () => ((i = (i * 9301 + 49297) % 233280) / 233280))(5);
+  for (let k = 1; k < 14; k++) { const a = -Math.PI / 2 + (Math.PI * k) / 14, r = R_BORE * (1.02 + 0.12 * jag()); sh.lineTo(Math.cos(a) * r, AXIS + Math.sin(a) * r); }
+  sh.lineTo(0, AXIS + R_BORE + 0.2);
+  sh.closePath();
+  const g = new THREE.ExtrudeGeometry(sh, { depth: 0.6, bevelEnabled: false }).rotateY(Math.PI / 2);
+  const m = mesh(g, 'concrete', scene, L - 0.6, 0, 0);
+  m.visible = false;
+  return m;
+})();
+const debris = [];
+{
+  const jag = (i => () => ((i = (i * 9301 + 49297) % 233280) / 233280))(9);
+  for (let k = 0; k < 12; k++) {
+    const d = mesh(geo.box(0.35 + jag() * 0.5, 0.3 + jag() * 0.4, 0.35 + jag() * 0.5), 'concrete', scene);
+    const a = -Math.PI / 2 + Math.PI * jag();
+    d.userData = { from: new THREE.Vector3(L - 0.2, AXIS + Math.sin(a) * R_BORE * 0.9, -Math.cos(a) * R_BORE * 0.9), to: new THREE.Vector3(L + 1 + jag() * 5, STATION.y0 + 0.3, -0.5 - jag() * 2.5), spin: jag() * 6 };
+    d.visible = false;
+    debris.push(d);
+  }
+}
+// The first train: four cars, lit windows, a head light.
+const train = group(scene, 0, 0, 0);
+{
+  const body = bp('#2a62b8'), win = glow('#d6f3ff', 1.1), head = glow('#ffffff', 2.2);
+  for (let k = 0; k < 4; k++) {
+    const cx = -3 - k * 6.3;
+    mesh(geo.box(5.9, 2.6, 2.6), body, train, cx, AXIS - 0.9, 0);
+    mesh(geo.box(5.2, 0.6, 2.66), win, train, cx, AXIS - 0.4, 0).castShadow = false;
+    mesh(geo.box(5.4, 0.25, 2.0), 'steel', train, cx, AXIS + 0.5, 0);
+    for (const x of [-2, 2]) mesh(geo.box(1.2, 0.4, 2.2), 'dark', train, cx + x, AXIS - 2.3, 0);
+  }
+  mesh(geo.box(0.3, 0.9, 2.3), win, train, 0.05, AXIS - 0.5, 0).castShadow = false;
+  for (const z of [-0.8, 0.8]) mesh(geo.box(0.12, 0.25, 0.4), head, train, 0.12, AXIS - 1.6, z).castShadow = false;
+  train.visible = false;
+}
+for (const z of [-0.75, 0.75]) mesh(geo.box(STATION.x1 - STATION.x0, 0.2, 0.15), 'cutter', scene, (STATION.x0 + STATION.x1) / 2, AXIS - 2.6, z).userData.noEdges = true;
+
+await pause();
+// ------------------------------------------------------------------ workers
+const loader = new GLTFLoader();
+const mixers = [];
+function fit(obj, h) {
+  obj.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(obj, true);
+  obj.scale.multiplyScalar(h / b.getSize(new THREE.Vector3()).y);
+  obj.updateMatrixWorld(true);
+  b.setFromObject(obj, true);
+  const c = b.getCenter(new THREE.Vector3());
+  obj.position.sub(new THREE.Vector3(c.x, b.min.y, c.z));
+  const wrap = new THREE.Group();
+  wrap.add(obj);
+  wrap.traverse(o => { if (o.isMesh) { o.castShadow = true; o.material = M.worker; } });
+  scene.add(wrap);
+  return wrap;
+}
+const [workerA, workerB] = await Promise.all(['worker-a', 'worker-b'].map(f => loader.loadAsync(`models/${f}.glb`)));
+function worker(src, clip) {
+  const w = fit(SkeletonUtils.clone(src.scene), 1.8);
+  const mixer = new THREE.AnimationMixer(w.children[0]);
+  mixer.clipAction(src.animations.find(a => a.name.endsWith('|' + clip)) || src.animations[0]).play();
+  mixers.push(mixer);
+  return w;
+}
+const deckWorker = worker(workerA, 'Walk');
+const siteWorkers = [worker(workerB, 'Walk'), worker(workerA, 'Idle')];
+siteWorkers[1].position.set(-14.5, 0, -1.5);
+siteWorkers[1].rotation.y = -Math.PI / 2;
+
+await pause();
+// ------------------------------------------------------------------ ring counter over the machine
+const marker = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.3, 0), new THREE.Vector3(0, AXIS + R_OUT + 0.3, 0)]), new THREE.LineDashedMaterial({ color: '#35C7E8', dashSize: 0.6, gapSize: 0.4, transparent: true, opacity: 0.9 }));
+marker.computeLineDistances();
+marker.position.z = 0.05;
+scene.add(marker);
+const ctrDiv = document.createElement('div');
+ctrDiv.className = 'evm-label kpi ring';
+const counter = new CSS2DObject(ctrDiv);
+counter.center.set(0.5, 1);
+scene.add(counter);
+let lastCtr = '';
+function setCounter(n, x, show) {
+  const h = `TBM · ${t('halka', 'ring')}<b>${int(n)} / ${int(RINGS)}</b><span>${int(n * RING_M)} m · ${t('kazı', 'bored')}</span>`;
+  if (h !== lastCtr) ctrDiv.innerHTML = lastCtr = h;
+  counter.position.set(x, 1.4, 0);
+  marker.position.x = x;
+  counter.visible = marker.visible = show;
+  ctrDiv.style.opacity = show ? 1 : 0;
+}
+
+await pause();
+// ------------------------------------------------------------------ edges
+const edgeTargets = [];
+scene.traverse(o => { if (o.isMesh && !o.isSkinnedMesh && !o.isInstancedMesh && !o.userData.noEdges && o.material !== M.worker) edgeTargets.push(o); });
+for (const o of edgeTargets) o.add(new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 30), EDGE));
+const tbmMats = [];
+// The machine stays bright while the site dims for the chart (it marks "today"), and the rings become the columns:
+// both get their own materials.
+{
+  const own = new Map(), TBM_EDGE = EDGE.clone();
+  tbm.traverse(o => {
+    if (o.isLineSegments) o.material = TBM_EDGE;
+    else if (o.isMesh) { if (!own.has(o.material)) own.set(o.material, o.material.clone()); o.material = own.get(o.material); }
+  });
+  // See-through from the start (taken apart after the breakthrough, it fades out; see fadeSite for why).
+  for (const m of [...own.values(), TBM_EDGE]) { m.transparent = true; m.userData.baseOpacity = m.opacity; if (m.side === THREE.DoubleSide) m.forceSinglePass = true; tbmMats.push(m); }
+  rings.material = M.ring.clone();
+  rings.material.emissive.set('#35C7E8');
+  rings.material.emissiveIntensity = 0;
+}
+// Everything else fades for the chart (and is hidden while the chart is fully shown).
+// The site lives on layer 1 too: the camera stops drawing that layer while the chart is fully shown (visibility flags
+// stay as the scene sets them); the shadow camera keeps it.
+for (const root of scene.children.filter(o => o !== tbm && o !== rings && !o.isLight && o !== counter && o !== marker)) root.traverse(o => o.layers.set(1));
+camera.layers.enable(1);
+sun.shadow.camera.layers.enable(1);
+const fadeMats = new Set();
+scene.traverse(o => { if ((o.isMesh || o.isLine) && o.material && !o.isInstancedMesh) fadeMats.add(o.material); });
+tbm.traverse(o => { if (o.material) fadeMats.delete(o.material); });
+for (const m of [M.lamp, M.muck]) fadeMats.add(m);
+fadeMats.delete(marker.material);
+// These materials are see-through from the start (at full opacity they look the same): switching a material to
+// transparent mid-animation needs another shader variant, and compiling it froze the page when the chart came in.
+// Double-sided ones draw in one pass, as they do when opaque.
+for (const mt of fadeMats) { mt.userData.baseOpacity = mt.opacity; mt.transparent = true; if (mt.side === THREE.DoubleSide) mt.forceSinglePass = true; }
+function fadeSite(f) {
+  for (const mt of fadeMats) {
+    mt.opacity = mt.userData.baseOpacity * f;
+    mt.depthWrite = f > 0.6;
+  }
+}
+
+// ------------------------------------------------------------------ progress → state
+// Boring time is not even: the hard rock band takes longer per metre, so the ring counter slows there.
+const C0 = 0.05, C1 = 0.95; // lowering the machine, boring, (breakthrough comes after C1)
+const hardAt = f => ramp(f, HARD[0] - 0.02, HARD[0] + 0.02) * (1 - ramp(f, HARD[1] - 0.02, HARD[1] + 0.02));
+const TIME = [0];
+for (let i = 1; i <= 400; i++) TIME.push(TIME[i - 1] + 1 + 1.0 * hardAt((i - 0.5) / 400)); // half the speed in hard rock
+for (let i = 0; i <= 400; i++) TIME[i] /= TIME[400];
+function fracAt(u) { // share of the tunnel bored after share u of the boring time
+  u = clamp01(u);
+  let i = 1;
+  while (i < 400 && TIME[i] < u) i++;
+  return (i - 1 + (u - TIME[i - 1]) / Math.max(TIME[i] - TIME[i - 1], 1e-9)) / 400;
+}
+const timeAt = f => { const i = Math.min(399, Math.floor(f * 400)); return TIME[i] + (TIME[i + 1] - TIME[i]) * (f * 400 - i); };
+const TODAY_RINGS = 540;
+const C_TODAY = C0 + (C1 - C0) * timeAt(TODAY_RINGS / RINGS); // ≈ 45 % of the work, 540 rings, 810 m
+const tmp = new THREE.Matrix4(), v3 = new THREE.Vector3();
+const PATH = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+function pointOnPath(d, out) {
+  for (let i = 0; i < PATH.length - 1; i++) {
+    const seg = PATH[i].distanceTo(PATH[i + 1]);
+    if (d <= seg) return out.copy(PATH[i]).lerp(PATH[i + 1], d / seg);
+    d -= seg;
+  }
+  return null;
+}
+const pingpong = v => { const f = v % 2; return f < 1 ? f : 2 - f; };
+let state = { f: 0, sx: 0 };
+
+function update(c, t) {
+  const lower = ramp(c, 0, C0);                            // machine lowered into the shaft
+  const f = c <= C0 ? 0 : fracAt((c - C0) / (C1 - C0));    // share of the tunnel bored
+  const boring = c > C0 && c < C1;
+  const bk = clamp01((c - C1) / (1 - C1));                // breakthrough and arrival, 0..1
+  const sx = f * (L - 0.6) + 4 * smooth(clamp01(bk / 0.22)); // cutterhead front; it breaks into the station
+  state = { f, sx };
+  tbm.position.set(sx, THREE.MathUtils.lerp(4.5, AXIS, lower), 0);
+  cut.value = bk > 0 ? L : sx;
+  cutterhead.rotation.x = boring ? t * 1.6 : cutterhead.rotation.x;
+  const hard = boring ? hardAt(f) : 0;
+  warnMat.emissiveIntensity = 1.2 * hard;
+  erector.rotation.x = boring ? Math.sin(t * 0.7) * 1.2 : 0;
+
+  // Rings set behind the shield tail; the newest one flashes.
+  const placed = Math.max(0, (sx - SHIELD + 0.4) / RW);
+  const n = bk > 0 ? NR : Math.min(NR, Math.floor(placed));
+  rings.count = n;
+  ringLines.geometry.setDrawRange(0, n * perRing);
+  flash.visible = boring && n > 0;
+  if (flash.visible) { flash.position.set((n - 1) * RW + 0.01, AXIS, 0.01); M.flash.opacity = 1 - (placed - n); }
+  lamps.count = bk > 0 ? NL : Math.min(NL, Math.max(0, Math.floor((sx - SHIELD - 30) / 6)));
+  // After the breakthrough: the wall opens, the debris falls, the machine is taken apart, the lights come on and the
+  // first train arrives at the platform.
+  headwall.visible = bk <= 0.08;
+  brokenWall.visible = bk > 0.08;
+  const fall = clamp01((bk - 0.08) / 0.2);
+  debris.forEach(d => {
+    d.visible = bk > 0.08;
+    const u = d.userData;
+    d.position.lerpVectors(u.from, u.to, fall);
+    d.position.y = THREE.MathUtils.lerp(u.from.y, u.to.y, fall * fall) + Math.sin(Math.PI * fall) * 0.8;
+    d.rotation.set(u.spin * fall, u.spin * 0.6 * fall, 0);
+  });
+  const gone = ramp(bk, 0.3, 0.45);
+  tbm.visible = gone < 1;
+  for (const m of tbmMats) m.opacity = m.userData.baseOpacity * (1 - gone);
+  const lit = ramp(bk, 0.25, 0.55);
+  M.lamp.emissiveIntensity = 0.6 + 1.2 * lit;
+  stLights.forEach(l => (l.material.emissiveIntensity = 0.08 + 1.4 * lit));
+  const tr = ramp(bk, 0.42, 1);
+  train.visible = tr > 0;
+  train.position.x = THREE.MathUtils.lerp(-6, STATION.x1 - 1.5, 1 - (1 - tr) * (1 - tr));
+  rails.scale.x = bk > 0 ? L - SHAFT.x0 : Math.max(0.01, sx - SHIELD - 0.4 - SHAFT.x0);
+
+  // Gantry crane: lowers the machine, then sends ring segments down the shaft.
+  const hookX = -SHIELD / 2 - 0.2;
+  let hookY = GY - 1.2, segOn = false;
+  if (c < C0) hookY = tbm.position.y + R_OUT + 0.4;
+  else if (boring) {
+    const k = (t % 8) / 8;
+    hookY = k < 0.5 ? THREE.MathUtils.lerp(GY - 1.2, AXIS + R_OUT + 1.2, smooth(k / 0.5)) : THREE.MathUtils.lerp(AXIS + R_OUT + 1.2, GY - 1.2, smooth((k - 0.5) / 0.5));
+    segOn = k < 0.5 && sx > SHIELD + 8;
+  }
+  trolley.position.x = hook.position.x = cable.position.x = segLoad.position.x = hookX;
+  hook.position.y = hookY;
+  cable.scale.y = GY - hookY;
+  cable.position.y = (GY + hookY) / 2;
+  segLoad.visible = segOn;
+  segLoad.position.y = hookY - 1.6;
+
+  // Back-up trailers follow the shield; each is lowered down the shaft when there is room for it.
+  trailers.forEach((tr, k) => {
+    const back = SHIELD + 1.6 + TRAILER / 2 + k * (TRAILER + GAP);
+    const shaftMid = (SHAFT.x0 + SHAFT.x1) / 2;
+    const at = shaftMid + back; // shield position at which this trailer sits in the middle of the shaft
+    const drop = clamp01((sx - (at - 4)) / 4);
+    tr.visible = c >= C0 && drop > 0 && bk < 0.3;
+    tr.position.set(Math.max(sx - back, shaftMid), THREE.MathUtils.lerp(4.5, AXIS, smooth(drop)), 0);
+  });
+  const lastTr = trailers.filter(tr => tr.visible).pop();
+  const beltEnd = lastTr ? lastTr.position.x + TRAILER / 2 : sx - SHIELD;
+  beltT.position.x = SHAFT.x0 + 1.5;
+  beltT.scale.x = Math.max(0.01, sx - SHIELD - 1 - beltT.position.x);
+  beltT.visible = beltV.visible = c >= C0;
+
+  // Spoil on the belt: from the machine, along the tunnel, up the shaft, onto the heap.
+  PATH[0].set(sx - SHIELD - 1, BELT.y + 0.3, BELT.z);
+  PATH[1].set(SHAFT.x0 + 1.5, BELT.y + 0.3, BELT.z);
+  PATH[2].set(SHAFT.x0 + 1.5, 2.5, BELT.z);
+  PATH[3].copy(beltTop.a).setY(2.5);
+  PATH[4].copy(beltTop.b).setY(beltTop.b.y + 0.4);
+  let total = 0;
+  for (let i = 0; i < PATH.length - 1; i++) total += PATH[i].distanceTo(PATH[i + 1]);
+  let m = 0;
+  if (boring && beltEnd > 0) for (let j = 0; j < NMUCK; j++) {
+    const d = (j * MUCK_GAP + t * 3.2) % (NMUCK * MUCK_GAP);
+    if (d > total || !pointOnPath(d, v3)) continue;
+    muck.setMatrixAt(m++, tmp.makeTranslation(v3.x, v3.y, v3.z));
+  }
+  muck.count = m;
+  muck.instanceMatrix.needsUpdate = true;
+  const hs = 0.4 + 0.6 * clamp01(c / C1);
+  heap.scale.set(4.5 * hs, 3.4 * hs, 4.5 * hs);
+  heap.position.y = 1.7 * hs;
+
+  // People and traffic.
+  deckWorker.visible = trailers[0].visible && boring;
+  const dk = pingpong(t / 6);
+  deckWorker.position.set(trailers[0].position.x - 2.5 + dk * 5, AXIS + 0.86, 0.8);
+  deckWorker.rotation.y = (t / 6) % 2 < 1 ? Math.PI / 2 : -Math.PI / 2;
+  siteWorkers[0].position.set(-20 + pingpong(t / 9) * 8, 0, -1.6);
+  siteWorkers[0].rotation.y = (t / 9) % 2 < 1 ? Math.PI / 2 : -Math.PI / 2;
+  const span = FX1 - FX0 - 8;
+  for (const car of cars) {
+    const u = (car.userData.off + t * car.userData.v) % span;
+    car.position.x = car.userData.lane ? FX1 - 4 - u : FX0 + 4 + u;
+  }
+
+  setCounter(Math.round(f * RINGS), Math.min(sx, L) - SHIELD / 2, c > C0 * 0.6);
+}
+
+// ------------------------------------------------------------------ chart: revenue, billing, cost and margin by month
+// Sample scenario (illustrative values): 12 months of boring up to "today" (540 rings). Earned revenue is the contract
+// value of the rings built (the same per ring), so a month's column is as tall as the rings bored in it: the hard rock
+// months are short. Cost per ring is higher in hard rock (the machine's monthly cost is spread over fewer rings), so the
+// margin there all but disappears. Billing (hakediş) lags the work: 40 % of a month is billed in the month, 60 % in the
+// next, so part of the last month is still unbilled.
+const MONTHS = 12;
+const U_TODAY = timeAt(TODAY_RINGS / RINGS);
+const fAtMonth = m => fracAt((U_TODAY * m) / MONTHS);       // share of the tunnel bored by month m
+const monthAt = f => (MONTHS * timeAt(f)) / U_TODAY;          // month (continuous) at which share f was bored
+const overlap = (a, b, c, d) => Math.max(0, Math.min(b, d) - Math.max(a, c));
+const SER = [];
+for (let m = 0; m < MONTHS; m++) {
+  const f0 = fAtMonth(m), f1 = fAtMonth(m + 1);
+  const hard = overlap(f0, f1, HARD[0], HARD[1]) * RINGS, all = (f1 - f0) * RINGS;
+  SER.push({ rev: all, hard, soft: all - hard });
+}
+const sum = k => SER.reduce((a, s) => a + s[k], 0);
+// Soft ground runs a little under the 12 % plan (about 10 %, varying a little month to month); the hard rock margin
+// follows from the sample total (earned margin 8,4 %).
+const PLAN_MARGIN = 0.12, MARGIN = 0.084, SOFT_MARGIN = 0.102;
+SER.forEach((s, m) => { s.softCost = s.soft * (1 - SOFT_MARGIN - 0.006 * Math.sin(m * 2.1 + 0.4)); });
+const HARD_MARGIN = (MARGIN * sum('rev') - (sum('soft') - sum('softCost'))) / sum('hard');
+SER.forEach((s, m) => { s.cost = s.softCost + s.hard * (1 - HARD_MARGIN); s.bill = 0.4 * s.rev + 0.6 * (m ? SER[m - 1].rev : 0); });
+const KPI = { margin: 100 * (1 - sum('cost') / sum('rev')), unbilled: 100 * (1 - sum('bill') / sum('rev')), hardMargin: 100 * HARD_MARGIN };
+
+const SX_TODAY = (TODAY_RINGS / RINGS) * (L - 0.6);
+const MW = SX_TODAY / MONTHS;                                    // metres per month: today sits at the cutterhead
+const YB = AXIS + R_OUT + 0.4;                                  // chart base, just over the machine
+const TOPV = Math.max(...SER.map(s => s.rev));
+const HU = 25 / TOPV;                                           // metres per unit
+const P = (m, v, z = 0.8) => new THREE.Vector3(m * MW, YB + v * HU, z);
+const COLW = MW * 0.72;
+const thick = LITE ? 1.7 : 1;
+const chart = new THREE.Group();
+scene.add(chart);
+const chartMats = [];
+const cmat = (color, extra = {}) => { const m = new THREE.MeshStandardMaterial({ color, roughness: 0.6, transparent: true, ...extra }); m.userData.base = m.opacity; chartMats.push(m); return m; };
+const lmat = (color, opacity, dashed) => {
+  const m = dashed ? new THREE.LineDashedMaterial({ color, transparent: true, opacity, dashSize: 0.7, gapSize: 0.5 }) : new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+  m.userData.base = opacity; chartMats.push(m); return m;
+};
+const CM = {
+  col: cmat('#35C7E8', { opacity: 0.32, emissive: '#0e7490', emissiveIntensity: 0.45, depthWrite: false }),
+  colEdge: lmat('#a5f3fc', 0.8),
+  margin: cmat('#4ade80', { opacity: 0.65, emissive: '#22c55e', emissiveIntensity: 0.7, depthWrite: false }),
+  cost: cmat('#fcd34d', { emissive: '#f59e0b', emissiveIntensity: 0.9 }),
+  bill: cmat('#cfe8ff', { emissive: '#8FDCF0', emissiveIntensity: 0.35 }),
+  axis: lmat('#cfe8ff', 0.75),
+  today: lmat('#ffffff', 0.9, true),
+  band: new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, fog: false, toneMapped: false }),
+};
+CM.band.userData.base = 0.85;
+chartMats.push(CM.band);
+const panel = chartPanel(MONTHS * MW + 40, 52);
+chartMats.push(panel.material);
+panel.position.set((MONTHS * MW) / 2 + 8, YB + 10, -2);
+chart.add(panel);
+const cline = (pts, m) => { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), m); l.computeLineDistances(); chart.add(l); return l; };
+cline([P(0, 0), P(MONTHS + 1.2, 0)], CM.axis);
+cline([P(0, 0), P(0, 1.12 * TOPV)], CM.axis);
+for (let m = 0; m <= MONTHS; m += 3) cline([P(m, 0), P(m, 0).setY(YB - 0.8)], CM.axis);
+const todayLine = cline([P(MONTHS, 0).setY(YB - 0.4), P(MONTHS, 0).setY(YB + 29)], CM.today);
+// Monthly columns of earned revenue, with the margin (revenue − cost) on top.
+const cols = [], margins = [];
+SER.forEach((s, m) => {
+  const g = new THREE.BoxGeometry(COLW, 1, 1.4).translate(0, 0.5, 0);
+  const col = new THREE.Mesh(g, CM.col);
+  col.scale.y = s.rev * HU;
+  col.position.copy(P(m + 0.5, 0, 0));
+  col.add(new THREE.LineSegments(new THREE.EdgesGeometry(g), CM.colEdge));
+  chart.add(col);
+  cols.push(col);
+  const mg = new THREE.Mesh(new THREE.BoxGeometry(COLW + 0.3, 1, 1.7).translate(0, 0.5, 0), CM.margin);
+  const mh = Math.max(0.14, (s.rev - s.cost) * HU);
+  mg.scale.y = mh;
+  mg.position.copy(P(m + 0.5, 0, 0)).setY(YB + s.rev * HU - mh);
+  chart.add(mg);
+  margins.push(mg);
+});
+// Cost and billing as tubes through the months, revealed with drawRange.
+function tube(vals, r, material) {
+  const pts = vals.map((v, m) => P(m + 0.5, v, 1.1));
+  pts.unshift(P(0.15, vals[0], 1.1));
+  pts.push(P(MONTHS - 0.15, vals[vals.length - 1], 1.1));
+  const geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.2), 160, r, 8);
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.userData.total = geo.index.count;
+  geo.setDrawRange(0, 0);
+  chart.add(mesh);
+  return mesh;
+}
+const reveal = (mesh, k) => mesh.geometry.setDrawRange(0, Math.floor((mesh.userData.total * k) / 6) * 6);
+const costLine = tube(SER.map(s => s.cost), 0.26 * thick, CM.cost);
+const billLine = tube(SER.map(s => s.bill), 0.14 * thick, CM.bill);
+const billDots = SER.map((s, m) => { const d = new THREE.Mesh(new THREE.SphereGeometry(0.36 * thick, 12, 8), CM.bill); d.position.copy(P(m + 0.5, s.bill, 1.1)); chart.add(d); return d; });
+// Hard rock months: a hatched band; it starts where the band is in the ground and stretches onto the time axis.
+const bandTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 32;
+  const g = c.getContext('2d');
+  g.strokeStyle = 'rgba(252, 211, 77, 0.5)'; g.lineWidth = 2;
+  g.beginPath(); for (const o of [-32, 0, 32]) { g.moveTo(o, 32); g.lineTo(o + 32, 0); } g.stroke();
+  const tx = new THREE.CanvasTexture(c); tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.colorSpace = THREE.SRGBColorSpace; return tx;
+})();
+CM.band.map = bandTex;
+const band = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), CM.band);
+band.renderOrder = -0.4;
+chart.add(band);
+const H_M = [monthAt(HARD[0]), monthAt(HARD[1])];
+const BAND_H = 28;
+function placeBand(k) { // k 0: over the hard rock in the ground, 1: over the hard rock months
+  const x0 = THREE.MathUtils.lerp(HARD[0] * (L - 0.6), H_M[0] * MW, k), x1 = THREE.MathUtils.lerp(HARD[1] * (L - 0.6), H_M[1] * MW, k);
+  const y0 = THREE.MathUtils.lerp(AXIS - 7, YB, k), y1 = THREE.MathUtils.lerp(AXIS + 5, YB + BAND_H, k);
+  band.scale.set(x1 - x0, y1 - y0, 1);
+  band.position.set((x0 + x1) / 2, (y0 + y1) / 2, -1.2);
+  bandTex.repeat.set((x1 - x0) / 1.6, (y1 - y0) / 1.6);
+}
+// Labels.
+const labels = [];
+function label(html, pos, cls, at) {
+  const div = document.createElement('div');
+  div.className = 'evm-label ' + cls;
+  div.innerHTML = html;
+  const o = new CSS2DObject(div);
+  o.position.copy(pos);
+  o.userData.at = at;
+  chart.add(o);
+  labels.push(o);
+  return o;
+}
+const up = v => new THREE.Vector3(0, v, 0);
+label(t('Kazanılmış gelir · aylık', 'Earned revenue · monthly'), P(1.6, SER[1].rev).add(up(2.6)), 'ev', 0.12);
+label(t('Kazanılmış marj', 'Earned margin'), P(MONTHS - 1.6, SER[MONTHS - 2].rev).add(up(2.2)), 'mg', 0.45);
+label(t('Gerçekleşen maliyet', 'Actual cost'), P(3, SER[2].cost).add(up(-2.6)), 'ac', 0.4);
+label(t('Hakediş · faturalanan', 'Progress billing · billed'), P(1.15, SER[0].bill).add(new THREE.Vector3(3.2, -2.2, 0)), 'pv', 0.62);
+label(t('sert kaya: maliyet arttı, marj eridi', 'hard rock: cost up, margin gone'), P((H_M[0] + H_M[1]) / 2, TOPV).add(up(4.6)), 'hr', 0.5);
+label(`${t('Bugün · ay', 'Today · month')} ${MONTHS}<span class="long"> · ${int(TODAY_RINGS)} ${t('halka', 'rings')}</span>`, P(MONTHS, 0).setY(YB + 30.6), 'today', 0.7);
+label(t('ay 0', 'month 0'), P(0, 0).setY(YB - 2), 'axis', 0.05);
+for (const m of [3, 6, 9]) label(String(m), P(m, 0).setY(YB - 2), 'axis', 0.05);
+label(t('aylık tutar', 'monthly amount'), P(0, TOPV * 1.12).add(new THREE.Vector3(2.5, 1.4, 0)), 'axis', 0.05);
+const kpis = [
+  { html: `${t('Kazanılmış marj', 'Earned margin')} <b>${pct(num(KPI.margin, 1))}</b><span>${t('plan', 'plan')} ${pct(Math.round(PLAN_MARGIN * 100))}</span>`, chip: `${t('Marj', 'Margin')}<b>${pct(num(KPI.margin, 1))}</b>`, tone: 'warn', y: 22 },
+  { html: `${t('Faturalanmamış iş', 'Unbilled work')} <b>${pct(Math.round(KPI.unbilled))}</b><span>${t('kazanılan gelir − hakediş', 'earned revenue − billed')}</span>`, chip: `${t('Faturalanmamış', 'Unbilled')}<b>${pct(Math.round(KPI.unbilled))}</b>`, tone: '', y: 10 },
+];
+kpis.forEach((k, i) => label(k.html, new THREE.Vector3(SX_TODAY + 10.5, YB + k.y, 0.8), `kpi ${k.tone}`, 0.78 + i * 0.06));
+// Phones: names and indicators in a strip above the chart.
+stripStyles();
+const strip = document.createElement('div');
+strip.className = 'evm-strip';
+strip.setAttribute('aria-hidden', 'true');
+const chips = [];
+const chip = (html, at, cls = '') => { const sp = document.createElement('span'); sp.className = cls; sp.innerHTML = html; strip.appendChild(sp); chips.push([sp, at]); };
+chip(`<i style="background:#67e8f9"></i>${t('Gelir', 'Revenue')}`, 0.12);
+chip(`<i style="background:#fcd34d"></i>${t('Maliyet', 'Cost')}`, 0.4);
+chip(`<i style="background:#4ade80"></i>${t('Marj', 'Margin')}`, 0.45);
+chip(`<i style="background:#e0f2fe"></i>${t('Hakediş', 'Billed')}`, 0.62);
+strip.appendChild(Object.assign(document.createElement('span'), { className: 'row' }));
+kpis.forEach((k, i) => chip(k.chip, 0.78 + i * 0.06, `kpi ${k.tone}`));
+document.body.appendChild(strip);
+
+// Chart build-up k (0..1) and opacity fade; colsIn: the columns take over from the stacked rings (see flyRings).
+function setChart(k, fade, colsIn) {
+  chart.visible = fade > 0.01;
+  for (const m of chartMats) m.opacity = m.userData.base * fade;
+  CM.col.opacity *= colsIn;
+  CM.colEdge.opacity *= colsIn;
+  cols.forEach(c => (c.visible = colsIn > 0.01));
+  margins.forEach((mg, i) => { const a = ramp(k, 0.22 + (0.18 * i) / MONTHS, 0.3 + (0.18 * i) / MONTHS); mg.visible = a > 0.01; mg.scale.x = Math.max(0.01, a); });
+  reveal(costLine, ramp(k, 0.05, 0.4));
+  reveal(billLine, ramp(k, 0.5, 0.75));
+  billDots.forEach((d, i) => (d.visible = ramp(k, 0.5, 0.75) * MONTHS > i + 0.5));
+  todayLine.visible = k > 0.68;
+  for (const l of labels) { l.element.style.opacity = k >= l.userData.at ? fade : 0; l.visible = chart.visible; }
+  for (const [sp, at] of chips) sp.style.opacity = chart.visible && k >= at ? fade : 0;
+}
+
+// The rings leave the tunnel: first the tunnel stretches into the time axis (each ring slides to the month it was
+// built in, so the hard rock rings spread apart), then each month's rings rise and stack into that month's column.
+const RING_FROM = [];
+{
+  const n = Math.min(NR, Math.floor((SX_TODAY - SHIELD + 0.4) / RW));
+  const perMonth = new Array(MONTHS).fill(0);
+  for (let i = 0; i < n; i++) {
+    const mc = monthAt((i * RW + RW / 2) / (L - 0.6));
+    const mi = Math.min(MONTHS - 1, Math.floor(mc));
+    RING_FROM.push({ x: i * RW, xs: mc * MW - RW / 2, mi, j: perMonth[mi]++ });
+  }
+  RING_FROM.forEach(r => { r.n = perMonth[r.mi]; });
+}
+const q0 = new THREE.Quaternion(), sc3 = new THREE.Vector3(), pos3 = new THREE.Vector3();
+let ringsMoved = false;
+function flyRings(fly) {
+  if (fly <= 0) {
+    if (ringsMoved) { RING_FROM.forEach((r, i) => rings.setMatrixAt(i, tmp.makeTranslation(r.x, AXIS, 0))); rings.instanceMatrix.needsUpdate = true; ringsMoved = false; }
+    rings.visible = true;
+    rings.material.emissiveIntensity = 0;
+    placeBand(0);
+    return;
+  }
+  ringsMoved = true;
+  const stretch = smooth(clamp01(fly / 0.35)), rise = clamp01((fly - 0.35) / 0.65);
+  RING_FROM.forEach((r, i) => {
+    const s = SER[r.mi], h = (s.rev * HU) / r.n;
+    const a = smooth(clamp01((rise - (0.4 * r.mi) / MONTHS) / 0.6));
+    const x = THREE.MathUtils.lerp(r.x, r.xs, stretch);
+    const tx = (r.mi + 0.5) * MW - COLW / 2, ty = YB + (r.j + 0.5) * h;
+    pos3.set(THREE.MathUtils.lerp(x, tx, a), THREE.MathUtils.lerp(AXIS, ty, a) + Math.sin(Math.PI * a) * 3, THREE.MathUtils.lerp(0, 0.7, a));
+    sc3.set(THREE.MathUtils.lerp(1, COLW / (RW * 0.97), a), THREE.MathUtils.lerp(1, (h * 0.92) / (2 * R_OUT), a), THREE.MathUtils.lerp(1, 1.4 / R_OUT, a));
+    rings.setMatrixAt(i, tmp.compose(pos3, q0, sc3));
+  });
+  rings.instanceMatrix.needsUpdate = true;
+  rings.visible = fly < 0.98;
+  rings.material.emissiveIntensity = 0.7 * smooth(rise);
+  placeBand(stretch);
+}
+placeBand(0);
+
+// Chart camera: a front view of the chart; the distance fits its size into the free part of the screen.
+const CHART_TGT = new THREE.Vector3(33, YB + 10, 0), CHART_DIR = new THREE.Vector3(0, 0.12, 1).normalize();
+const CHART_CAM = new THREE.Vector3();
+const sheet = createSheet('metro');
+scene.add(sheet.mesh);
+function fitChartCam() {
+  const tn = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const phone = camera.aspect < 1;
+  // Wide screens: room for the cards on the right, clear of the page's scene rail.
+  const size = phone ? { w: 60, h: 42 } : { w: 92, h: 42 };
+  CHART_TGT.x = phone ? 27 : 38;
+  const free = EMBED && camera.aspect > 1.2 ? 0.56 : EMBED && phone ? 0.86 : 0.92;
+  const tall = EMBED && phone ? 0.42 : 0.9;
+  const d = Math.max(size.h / 2 / tn / tall, size.w / 2 / (tn * camera.aspect) / free);
+  CHART_CAM.copy(CHART_TGT).addScaledVector(CHART_DIR, d);
+  sheet.place(camera, CHART_TGT, CHART_DIR, d);
+}
+let home = null;
+function moveCamera(cam) {
+  if (cam > 0 && !home) { home = { p: camera.position.clone(), t: controls.target.clone() }; controls.enabled = false; fitChartCam(); }
+  if (!home) return;
+  camera.position.lerpVectors(home.p, CHART_CAM, smooth(cam));
+  controls.target.lerpVectors(home.t, CHART_TGT, smooth(cam));
+  camera.lookAt(controls.target);
+  if (cam <= 0) { camera.position.copy(home.p); controls.target.copy(home.t); home = null; controls.enabled = true; }
+}
+const evmText = () => t(
+  `<b>Ölçüm · ay ${MONTHS} · halka ${int(TODAY_RINGS)}</b> · sert kaya aylarında maliyet gelire dayandı; kazanılmış marj %${num(KPI.margin, 1)} (plan %12). Kazanılan gelirin %${Math.round(KPI.unbilled)}'sı henüz faturalanmadı.`,
+  `<b>Measurement · month ${MONTHS} · ring ${int(TODAY_RINGS)}</b> · in the hard rock months cost reached revenue; earned margin ${num(KPI.margin, 1)}% (plan 12%). ${Math.round(KPI.unbilled)}% of earned revenue is not billed yet.`);
+
+// Story steps (the page drives P = 0..1): boring up to "today" (P 0.5), the chart (to 0.75), back to the tunnel
+// (to 0.82), then on to the station, the breakthrough and the first train.
+const T = { evmIn: 0.5, evmShown: 0.75, evmOut: 0.82, arrive: 0.92 };
+const NONE = { cam: 0, fade: 0, fly: 0, k: 0, chartFade: 0, evm: false };
+function stage(P) {
+  if (P < T.evmIn) return { ...NONE, c: (C_TODAY * P) / T.evmIn };
+  if (P < T.evmShown) {
+    const u = (P - T.evmIn) / (T.evmShown - T.evmIn);
+    return { c: C_TODAY, cam: smooth(clamp01(u / 0.25)), fade: smooth(clamp01((u - 0.08) / 0.25)), fly: clamp01((u - 0.12) / 0.45), k: clamp01((u - 0.42) / 0.58), chartFade: smooth(clamp01((u - 0.1) / 0.15)), evm: true };
+  }
+  if (P < T.evmOut) {
+    const w = (P - T.evmShown) / (T.evmOut - T.evmShown);
+    return { c: C_TODAY, cam: 1 - smooth(clamp01((w - 0.3) / 0.7)), fade: 1 - smooth(clamp01((w - 0.4) / 0.5)), fly: 1 - smooth(clamp01((w - 0.1) / 0.6)), k: 1, chartFade: 1 - smooth(clamp01((w - 0.1) / 0.4)), evm: true };
+  }
+  // Last step: bore on to the station wall (to 0.92), then the breakthrough and the first train.
+  if (P < T.arrive) return { ...NONE, c: C_TODAY + ((C1 - C_TODAY) * (P - T.evmOut)) / (T.arrive - T.evmOut) };
+  return { ...NONE, c: C1 + ((1 - C1) * (P - T.arrive)) / (1 - T.arrive) };
+}
+const phaseText = c => {
+  if (c < C0) return `<b>${t('Hazırlık', 'Set-up')}</b> · ${t('TBM giriş şaftına indiriliyor', 'the TBM is lowered into the launch shaft')}`;
+  if (c < C1) return `<b>${t('Kazı', 'Boring')}</b> · ${t('halka', 'ring')} ${int(state.f * RINGS)} / ${int(RINGS)}${hardAt(state.f) > 0.5 ? ' · ' + t('sert kaya: ilerleme yavaşladı', 'hard rock: progress slowed') : ''}`;
+  return `<b>${t('Varış', 'Arrival')}</b> · ${t('TBM istasyon duvarını deldi; tünel ışıkları yandı, ilk tren perona geliyor', 'the TBM broke through the station wall; the tunnel lights are on, the first train pulls in')}`;
+};
+
+// ------------------------------------------------------------------ camera framing
+// The view follows the machine along the tunnel: a 3/4 view from the front and above, so the street on top and the
+// tunnel below read together. Wide screens get a slow swing; time stops with reduced motion.
+const UP = new THREE.Vector3(0, 1, 0);
+const camOff = new THREE.Vector3(14, 26, 62);
+function drift(c, t) {
+  const end = ramp(c, C1, C1 + (1 - C1) * 0.5);
+  const tx = THREE.MathUtils.lerp(THREE.MathUtils.clamp(state.sx - (camera.aspect < 1 ? 5 : 2), -6, L + 6), L + (camera.aspect < 1 ? 10 : 9), end);
+  const lift = 1 - ramp(c, 0, C0);
+  controls.target.set(tx, -8 + 4 * lift, -2);
+  const swing = CINE ? 0.06 * Math.sin(t * 0.05) : 0;
+  const off = camOff.clone().applyAxisAngle(UP, swing).multiplyScalar((camera.aspect < 1 ? 0.95 : 1) * (1 + 0.12 * end));
+  camera.position.copy(controls.target).add(off);
+  camera.lookAt(controls.target);
+  sun.target.position.copy(controls.target);
+  sun.position.copy(controls.target).add(SUN_OFF);
+}
+
+// ------------------------------------------------------------------ loop
+let progress = 0, playing = !EMBED;
+const range = document.getElementById('prog');
+const playBtn = document.getElementById('play');
+range.addEventListener('input', () => { progress = range.value / 1000; });
+playBtn.onclick = () => {
+  playing = !playing;
+  playBtn.textContent = playing ? '❚❚' : '▶';
+  playBtn.setAttribute('aria-pressed', playing);
+};
+function syncSize() {
+  const cv = renderer.domElement;
+  if (cv.clientWidth === innerWidth && cv.clientHeight === innerHeight) return;
+  camera.aspect = innerWidth / Math.max(innerHeight, 1);
+  camera.fov = camera.aspect < 1 ? (EMBED ? 56 : 50) : 32;
+  if (EMBED && camera.aspect > 1.2) camera.setViewOffset(innerWidth, innerHeight, -innerWidth * 0.18, 0, innerWidth, innerHeight);
+  else if (EMBED && camera.aspect < 1) camera.setViewOffset(innerWidth, innerHeight, 0, innerHeight * 0.16, innerWidth, innerHeight);
+  else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  if (post) post.setSize(innerWidth, innerHeight);
+  labelRenderer.setSize(innerWidth, innerHeight);
+  backdrop.resize(camera.aspect);
+}
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clock = new THREE.Clock();
+let simT = 0;
+syncSize();
+// Warm up in the "today" state with the chart fully drawn: every instanced mesh and line then has something to draw,
+// so no shader is first used mid-animation.
+update(C_TODAY, 1);
+setChart(1, 1, 1);
+drift(0, 0);
+// Draw the chart's drawing sheet at its final size now, so warm-up uploads it and the chart step does not redraw it.
+fitChartCam();
+await pause();
+await warmUp(renderer, scene, camera, post);
+update(0, 0);
+setChart(0, 0, 0);
+let lastPhase = '', warm = 0, follow = true;
+controls.addEventListener('start', () => { follow = false; });
+renderer.setAnimationLoop(() => {
+  if (window.__hidden && warm > 2) { clock.getDelta(); return; }
+  warm++;
+  syncSize();
+  const dt = Math.min(clock.getDelta(), 0.1);
+  if (playing) {
+    progress = progress >= 1 ? 0 : Math.min(1, progress + dt / 60);
+    range.value = Math.round(progress * 1000);
+  }
+  const st = stage(progress);
+  const sdt = st.evm || REDUCED ? 0 : dt;
+  simT += sdt;
+  update(st.c, simT);
+  flyRings(st.fly);
+  if (st.cam > 0) { flash.visible = false; counter.visible = marker.visible = false; ctrDiv.style.opacity = 0; }
+  ringLines.visible = st.fly <= 0;
+  fadeSite(1 - 0.92 * st.fade);
+  if (st.fade < 0.97) camera.layers.enable(1); else camera.layers.disable(1);
+  sheet.set(0.9 * st.fade);
+  renderer.shadowMap.autoUpdate = st.fade < 0.3; // (toggling sun.castShadow would recompile every shader)
+  setChart(st.k, st.chartFade, ramp(st.fly, 0.85, 1));
+  moveCamera(st.cam);
+  if (!home && (EMBED || follow)) drift(st.c, simT);
+  else if (!home) controls.update();
+  const ph = st.evm && st.k > 0.6 ? evmText() : phaseText(st.c);
+  if (ph !== lastPhase) document.getElementById('phase').innerHTML = lastPhase = ph;
+  document.getElementById('pct').textContent = Math.round(progress * 100) + '%';
+  document.getElementById('note').style.opacity = st.c > C0 * 0.6 || st.chartFade > 0.5 ? 1 : 0;
+  mixers.forEach(m => m.update(sdt));
+  if (post) post.render(); else renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+});
+Object.assign(window, { __ready: true, THREE, camera, controls, KPI, SER, setProgress: v => { progress = v; playing = false; range.value = Math.round(v * 1000); } });
+</script>
+</body>
+</html>

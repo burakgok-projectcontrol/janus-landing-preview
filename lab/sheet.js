@@ -210,11 +210,49 @@ const DRAW = {
     dim(ctx, px, py + pw, px + pw, py + pw, '18,00', 50);
     label(ctx, t('ÇEKİRDEK', 'CORE'), px + pw / 2 - 52, py + pw / 2 + 8, 18, 0.75);
   },
+  metro(ctx) {
+    // Tunnel cross-section A-A, 62 px per metre: lining 6,30 / 5,70, six segments and a key per ring, track and walkway.
+    const s = 62, ox = 420, oy = 600, ro = 3.15 * s, ri = 2.85 * s;
+    label(ctx, t('A-A TÜNEL EN KESİTİ', 'TUNNEL CROSS-SECTION A-A'), ox - 300, oy - ro - 110, 34);
+    const ring = new Path2D();
+    ring.arc(ox, oy, ro, 0, Math.PI * 2);
+    ring.moveTo(ox + ri, oy);
+    ring.arc(ox, oy, ri, 0, Math.PI * 2, true);
+    ctx.strokeStyle = INK(0.9); ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(ox, oy, ro, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(ox, oy, ri, 0, Math.PI * 2); ctx.stroke();
+    hatch(ctx, ring, 9, 0.4);
+    // Segment joints: six segments and a smaller key at the crown.
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (const a of [-80, -100, -20, 40, 100, 160, 220].map(d => (d * Math.PI) / 180)) { ctx.moveTo(ox + Math.cos(a) * ri, oy + Math.sin(a) * ri); ctx.lineTo(ox + Math.cos(a) * ro, oy + Math.sin(a) * ro); }
+    ctx.stroke();
+    // Invert fill, track and walkway.
+    const yb = oy + ri * 0.62, half = Math.sqrt(ri * ri - (ri * 0.62) ** 2);
+    const inv = new Path2D();
+    inv.moveTo(ox - half, yb);
+    inv.lineTo(ox + half, yb);
+    inv.arc(ox, oy, ri, Math.asin(0.62), Math.PI - Math.asin(0.62));
+    inv.closePath();
+    ctx.lineWidth = 2; ctx.stroke(inv); hatch(ctx, inv, 14, 0.25);
+    ctx.fillStyle = INK(0.8);
+    for (const x of [-0.72, 0.72]) ctx.fillRect(ox + x * s - 6, yb - 10, 12, 10);
+    ctx.strokeRect(ox + 1.7 * s, yb - 0.9 * s, 0.9 * s, 0.9 * s);
+    label(ctx, t('YÜRÜME YOLU', 'WALKWAY'), ox + 1.55 * s, yb - 1.1 * s, 16, 0.7);
+    // Centre lines.
+    ctx.setLineDash([18, 8, 4, 8]); ctx.lineWidth = 1.2; ctx.strokeStyle = INK(0.5);
+    ctx.beginPath(); ctx.moveTo(ox - ro - 40, oy); ctx.lineTo(ox + ro + 40, oy); ctx.moveTo(ox, oy - ro - 40); ctx.lineTo(ox, oy + ro + 40); ctx.stroke();
+    ctx.setLineDash([]);
+    dim(ctx, ox - ro, oy + ro, ox + ro, oy + ro, `Ø ${num(6.3)}`, 60);
+    label(ctx, `Ø ${t('iç', 'inner')} ${num(5.7)}`, ox - 70, oy - 30, 20, 0.8);
+    label(ctx, t('1 HALKA = 6 SEGMENT + ANAHTAR · 1,50 m', '1 RING = 6 SEGMENTS + KEY · 1.50 m'), ox - 300, oy + ro + 150, 20, 0.75);
+  },
 };
 const KIND = {
-  dam: { title: t('Baraj gövdesi · en kesit', 'Dam body · cross-section'), scale: '1:500', sheet: '01/03', fit: 1120 },
-  airport: { title: t('Pist ve apron · vaziyet planı', 'Runway and apron · site plan'), scale: '1:2000', sheet: '02/03', fit: 1720 },
-  tower: { title: t('Gökdelen · görünüş ve kat planı', 'Tower · elevation and floor plan'), scale: '1:500', sheet: '03/03', fit: 1180 },
+  dam: { title: t('Baraj gövdesi · en kesit', 'Dam body · cross-section'), scale: '1:500', sheet: '01/04', fit: 1120 },
+  airport: { title: t('Pist ve apron · vaziyet planı', 'Runway and apron · site plan'), scale: '1:2000', sheet: '02/04', fit: 1720 },
+  tower: { title: t('Gökdelen · görünüş ve kat planı', 'Tower · elevation and floor plan'), scale: '1:500', sheet: '04/04', fit: 1180 },
+  metro: { title: t('Metro tüneli · en kesit', 'Metro tunnel · cross-section'), scale: '1:100', sheet: '03/04', fit: 1250 },
 };
 
 export function createSheet(kind) {
@@ -260,9 +298,10 @@ export function createSheet(kind) {
 // Screen background for the blueprint look: grid paper, frame, zone marks and title block, no drawing.
 // It is used as scene.background (stretched to the screen), so it is redrawn for the screen's aspect.
 const BACKDROP = {
-  dam: { title: t('Baraj · yapım sahası', 'Dam · construction site'), scale: '1:1000', sheet: '01/03' },
-  airport: { title: t('Havalimanı · yapım sahası', 'Airport · construction site'), scale: '1:2500', sheet: '02/03' },
-  tower: { title: t('Gökdelen · yapım sahası', 'Tower · construction site'), scale: '1:1000', sheet: '03/03' },
+  dam: { title: t('Baraj · yapım sahası', 'Dam · construction site'), scale: '1:1000', sheet: '01/04' },
+  airport: { title: t('Havalimanı · yapım sahası', 'Airport · construction site'), scale: '1:2500', sheet: '02/04' },
+  tower: { title: t('Gökdelen · yapım sahası', 'Tower · construction site'), scale: '1:1000', sheet: '04/04' },
+  metro: { title: t('Metro · tünel boy kesiti', 'Metro · tunnel long section'), scale: '1:2500', sheet: '03/04' },
 };
 export function createBackdrop(kind) {
   const canvas = document.createElement('canvas');

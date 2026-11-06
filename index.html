@@ -848,16 +848,31 @@
     <p data-en="The runway is marked, the terminal glazed, and the first aircraft lands.">Pist işaretlenir, terminal camlanır, ilk uçak iner.</p>
   </div>
   <div class="cap" data-scene="2" data-from="-1" data-to="0.5001">
+    <p class="eyebrow" data-en="Metro">Metro</p>
+    <h2 data-en="Every ring is a billing item">Her halka bir hakediş kalemi</h2>
+    <p data-en="The TBM (tunnel boring machine) builds new rings every day. Janus links every ring to a &lt;b&gt;BOQ item and an activity&lt;/b&gt;; progress is measured metre by metre and earned revenue is calculated at once.">TBM (tünel açma makinesi) her gün yeni halkalar örer. Janus her halkayı <b>BOQ kalemine ve aktiviteye</b> bağlar; ilerleme metre metre ölçülür, kazanılan gelir anında hesaplanır.</p>
+  </div>
+  <div class="cap" data-scene="2" data-from="0.5001" data-to="0.7501">
+    <p class="eyebrow" data-en="Measurement · profitability">Ölçüm · Kârlılık</p>
+    <h2 data-en="Earned, billed, spent">Kazandınız, faturaladınız, harcadınız</h2>
+    <p data-en="&lt;b&gt;Earned revenue&lt;/b&gt; is the contract value of the work done; &lt;b&gt;progress billing&lt;/b&gt; is the part invoiced, and the difference is &lt;b&gt;unbilled work&lt;/b&gt;. In the hard rock, cost rose and the margin melted away. Janus shows this without waiting for the month-end report; the &lt;b&gt;AI report assistant&lt;/b&gt; explains why."><b>Kazanılmış gelir</b> yapılan işin sözleşme değeridir; <b>hakediş</b> faturalanan kısmıdır, aradaki fark <b>faturalanmamış iş</b>tir. Sert zeminde maliyet arttı, marj eridi. Janus bunu ay sonu raporunu beklemeden gösterir; <b>AI rapor asistanı</b> nedenini yorumlar.</p>
+  </div>
+  <div class="cap" data-scene="2" data-from="0.7501" data-to="1.01">
+    <p class="eyebrow" data-en="Metro · completed">Metro · tamamlandı</p>
+    <h2 data-en="Profitability, item by item">Kârlılık, kalem kalem</h2>
+    <p data-en="The tunnel is finished; the accounts are not. Janus tracks the margin by BOQ item, so you see which items make money and which eat into it.">Tünel biter, hesap bitmez. Janus marjı BOQ kalemi bazında izler; hangi kalemin kâr ettirdiğini, hangisinin erittiğini görürsünüz.</p>
+  </div>
+  <div class="cap" data-scene="3" data-from="-1" data-to="0.5001">
     <p class="eyebrow" data-en="Tower">Gökdelen</p>
     <h2 data-en="Cost, floor by floor">Kat kat maliyet</h2>
     <p data-en="Every day the tower crane lifts steel to a new floor. Janus tracks each floor&#x27;s &lt;b&gt;budget, timesheets and actual cost&lt;/b&gt;, and allocates indirect costs to activities.">Kule vinç her gün yeni bir kata çelik taşır. Janus her katın <b>bütçesini, puantajını ve gerçekleşen maliyetini</b> izler; endirekt giderleri aktivitelere dağıtır.</p>
   </div>
-  <div class="cap" data-scene="2" data-from="0.5001" data-to="0.7501">
+  <div class="cap" data-scene="3" data-from="0.5001" data-to="0.7501">
     <p class="eyebrow" data-en="Measurement · EAC">Ölçüm · EAC</p>
     <h2 data-en="At this rate, what will it cost?">Bu gidişle ne kadar?</h2>
     <p data-en="If earned work falls behind what is spent, the estimate at completion (&lt;b&gt;EAC&lt;/b&gt;) exceeds the budget at completion (&lt;b&gt;BAC&lt;/b&gt;). Janus shows this now; the &lt;b&gt;AI report assistant&lt;/b&gt; explains the variance.">Kazanılan iş, harcanandan geride kalırsa tamamlanma maliyeti (<b>EAC</b>) bütçeyi (<b>BAC</b>) aşar. Janus bunu bugünden gösterir; <b>AI rapor asistanı</b> sapmayı yorumlar.</p>
   </div>
-  <div class="cap" data-scene="2" data-from="0.7501" data-to="1.01">
+  <div class="cap" data-scene="3" data-from="0.7501" data-to="1.01">
     <p class="eyebrow" data-en="Tower · completed">Gökdelen · tamamlandı</p>
     <h2 data-en="Measure the Past, Manage the Future">Geçmişi Ölç, Geleceği Yönet</h2>
     <p data-en="The values in the scenes are a sample scenario. Let&#x27;s look at the real values of your projects together.">Sahnelerdeki değerler örnek senaryodur. Sizin projelerinizin gerçek değerlerini birlikte görelim.</p>
@@ -867,7 +882,8 @@
 <nav class="rail" id="rail" aria-label="Sahneler" data-en-aria-label="Scenes">
   <button type="button" data-i="0"><span data-en="Dam">Baraj</span><span class="track"><b></b></span></button>
   <button type="button" data-i="1"><span data-en="Airport">Havalimanı</span><span class="track"><b></b></span></button>
-  <button type="button" data-i="2"><span data-en="Tower">Gökdelen</span><span class="track"><b></b></span></button>
+  <button type="button" data-i="2"><span data-en="Metro">Metro</span><span class="track"><b></b></span></button>
+  <button type="button" data-i="3"><span data-en="Tower">Gökdelen</span><span class="track"><b></b></span></button>
 </nav>
 
 <main>
@@ -1178,7 +1194,7 @@
 })();
 </script>
 <script>
-// Story player. A global position g runs from 0 to 3; scene i shows local progress g - i (0..1).
+// Story player. A global position g runs from 0 to 4; scene i shows local progress g - i (0..1).
 // Each scene has three steps that play on their own: build (0 → 0.5), measure (→ 0.75), finish (→ 1).
 // The first step starts on load; every wheel / swipe / key / button press plays the next one.
 (() => {
@@ -1199,6 +1215,7 @@
   const SCENES = [
     { src: 'lab/dam.html', title: ['Baraj yapımı ve S-eğrisi animasyonu', 'Dam construction and S-curve animation'], name: ['Baraj', 'Dam'] },
     { src: 'lab/airport.html', title: ['Havalimanı yapımı ve Earned Schedule animasyonu', 'Airport construction and Earned Schedule animation'], name: ['Havalimanı', 'Airport'] },
+    { src: 'lab/metro.html', title: ['Metro tüneli kazısı ve kârlılık animasyonu', 'Metro tunnel boring and profitability animation'], name: ['Metro', 'Metro'] },
     { src: 'lab/tower.html', title: ['Gökdelen yapımı ve EAC animasyonu', 'Tower construction and EAC animation'], name: ['Gökdelen', 'Tower'] },
   ].map(s => ({ ...s, frame: null, sent: -1 }));
   // Stops in g and the duration (seconds) of the step that ends at each stop.
@@ -1710,6 +1727,7 @@ addEventListener('load', () => setTimeout(() => {
     'lab/models/worker-b.glb',
     'lab/airport.html?embed',
     'lab/models/boeing-747.glb',
+    'lab/metro.html?embed',
     'lab/tower.html?embed',
   ]) {
     const l = document.createElement('link');

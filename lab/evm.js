@@ -231,25 +231,7 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
   kpis.forEach((k, i) => label(`${k.name} <b>${k.value}</b><span>${k.sub}</span>`, P(k.m ?? t + 5, k.v ?? 46 - i * 32), `kpi ${k.tone || ''}`, 0.74 + i * 0.05));
 
   // Phones: the chart is too small for labels on the curves, so the names and indices sit in a strip above it instead.
-  if (!document.getElementById('evm-strip-css')) {
-    const st = document.createElement('style');
-    st.id = 'evm-strip-css';
-    st.textContent = `.evm-strip { display: none; }
-@media (max-width: 600px) {
-  .evm-label.pv, .evm-label.ev, .evm-label.ac, .evm-label.fc, .evm-label.kpi { display: none; }
-  .evm-strip { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 12px; position: fixed; left: 12px; right: 12px; top: 72px; z-index: 2; pointer-events: none;
-    font: 600 11px/1.3 system-ui, sans-serif; color: #e6edf7; text-shadow: 0 1px 6px #07111F; }
-  .evm-strip > span { transition: opacity .35s; white-space: nowrap; }
-  .evm-strip i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
-  .evm-strip .kpi { background: rgba(7, 17, 31, .85); border: 1px solid #35C7E8; border-radius: 8px; padding: 3px 8px; }
-  .evm-strip .kpi b { color: #67e8f9; font-size: 14px; margin-left: 4px; }
-  .evm-strip .kpi.good { border-color: #4ade80; } .evm-strip .kpi.good b { color: #4ade80; }
-  .evm-strip .kpi.warn { border-color: #fbbf24; } .evm-strip .kpi.warn b { color: #fcd34d; }
-  .evm-strip .kpi.bad { border-color: #f87171; } .evm-strip .kpi.bad b { color: #f87171; }
-  .evm-strip .row { flex-basis: 100%; height: 0; }
-}`;
-    document.head.appendChild(st);
-  }
+  stripStyles();
   const strip = document.createElement('div');
   strip.className = 'evm-strip';
   strip.setAttribute('aria-hidden', 'true');
@@ -296,4 +278,27 @@ export function createEvmChart(sc, { origin, axis, len, height, columns = true, 
   }
   set(0);
   return { group: g, set, cols, P };
+}
+
+// Phones: chart names and indicators sit in a strip above the chart (.evm-strip); shared by the scenes.
+export function stripStyles() {
+  if (!document.getElementById('evm-strip-css')) {
+    const st = document.createElement('style');
+    st.id = 'evm-strip-css';
+    st.textContent = `.evm-strip { display: none; }
+  @media (max-width: 600px) {
+  .evm-label.pv, .evm-label.ev, .evm-label.ac, .evm-label.fc, .evm-label.kpi { display: none; }
+  .evm-strip { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 12px; position: fixed; left: 12px; right: 12px; top: 108px; z-index: 2; pointer-events: none;
+    font: 600 11px/1.3 system-ui, sans-serif; color: #e6edf7; text-shadow: 0 1px 6px #07111F; }
+  .evm-strip > span { transition: opacity .35s; white-space: nowrap; }
+  .evm-strip i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+  .evm-strip .kpi { background: rgba(7, 17, 31, .85); border: 1px solid #35C7E8; border-radius: 8px; padding: 3px 8px; }
+  .evm-strip .kpi b { color: #67e8f9; font-size: 14px; margin-left: 4px; }
+  .evm-strip .kpi.good { border-color: #4ade80; } .evm-strip .kpi.good b { color: #4ade80; }
+  .evm-strip .kpi.warn { border-color: #fbbf24; } .evm-strip .kpi.warn b { color: #fcd34d; }
+  .evm-strip .kpi.bad { border-color: #f87171; } .evm-strip .kpi.bad b { color: #f87171; }
+  .evm-strip .row { flex-basis: 100%; height: 0; }
+  }`;
+    document.head.appendChild(st);
+  }
 }
